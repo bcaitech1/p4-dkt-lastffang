@@ -4,8 +4,6 @@ import argparse
 
 def parse_args(mode='train'):
     parser = argparse.ArgumentParser()
-
-
     parser.add_argument('--seed', default=42, type=int, help='seed')
 
     parser.add_argument('--device', default='cpu', type=str, help='cpu or gpu')
@@ -26,7 +24,7 @@ def parse_args(mode='train'):
 
     # wandb
     parser.add_argument('--prefix', required=True, type=str, help='prefix of wandb run name (e.g. username or initials).')
-    parser.add_argument('--run-name', type=str, help='wandb run name. Defaults to current time')
+    parser.add_argument('--run_name', type=str, help='wandb run name. Defaults to current time')
 
     # 모델
     parser.add_argument('--hidden_dim', default=64, type=int, help='hidden dimension size')
