@@ -15,8 +15,21 @@ code
 │  ├── scheduler.py
 │  ├── trainer.py
 │  └── utils.py
-├── evaluation.py
 ├── inference.py
 ├── requirements.txt
 └── train.py
 ```
+
+## 코드 실행 방법
+
+* 모델 학습
+```bash
+python train.py --prefix prefix --run_name run_name --model_dir models/model_dir
+```
+
+* Inference
+```bash
+python inference.py --prefix prefix --run_name run_name --model_dir models/model_dir
+```
+
+
