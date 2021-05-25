@@ -144,4 +144,9 @@ cython_debug/
 wandb/
 
 # Pytorch Model
+models/
 .pt
+
+# Data dir
+asset/
+
