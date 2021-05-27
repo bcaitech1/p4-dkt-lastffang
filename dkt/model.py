@@ -88,10 +88,10 @@ class LSTM(nn.Module):
 
         return preds
 
-class LSTMATTN(nn.Module):
+class RNNATTN(nn.Module):
 
     def __init__(self, args):
-        super(LSTMATTN, self).__init__()
+        super(RNNATTN, self).__init__()
         self.args = args
         self.device = args.device
 
@@ -110,7 +110,13 @@ class LSTMATTN(nn.Module):
         # embedding combination projection
         self.comb_proj = nn.Linear((self.hidden_dim//3)*4, self.hidden_dim)
 
-        self.lstm = nn.LSTM(self.hidden_dim,
+        if self.args.model == "lstmattn":
+            self.rnn = nn.LSTM(self.hidden_dim,
+                                self.hidden_dim,
+                                self.n_layers,
+                                batch_first=True)
+        elif self.args.model == "gruattn":
+            self.rnn = nn.GRU(self.hidden_dim,
                             self.hidden_dim,
                             self.n_layers,
                             batch_first=True)
@@ -137,6 +143,10 @@ class LSTMATTN(nn.Module):
             batch_size,
             self.hidden_dim)
         h = h.to(self.device)
+
+        # GRU does not require cell state
+        if self.args.model == "gruattn":
+            return h
 
         c = torch.zeros(
             self.n_layers,
@@ -168,7 +178,7 @@ class LSTMATTN(nn.Module):
         X = self.comb_proj(embed)
 
         hidden = self.init_hidden(batch_size)
-        out, hidden = self.lstm(X, hidden)
+        out, hidden = self.rnn(X, hidden)
         out = out.contiguous().view(batch_size, -1, self.hidden_dim)
 
         extended_attention_mask = mask.unsqueeze(1).unsqueeze(2)
