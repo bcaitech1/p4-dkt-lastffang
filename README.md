@@ -20,3 +20,9 @@ code
 ├── requirements.txt
 └── train.py
 ```
+
+## 코드 실행 방법
+* Train & Inference를 한 번에 실행하기
+```bash
+python run_with_json.py --config json_file_path
+```
