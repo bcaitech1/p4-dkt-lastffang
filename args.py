@@ -34,7 +34,7 @@ def parse_args(mode):
     parser.add_argument('--drop_out', default=0.2, type=float, help='drop out rate')
 
     # 훈련
-    parser.add_argument('--n_epochs', default=100, type=int, help='number of epochs')
+    parser.add_argument('--n_epochs', default=20, type=int, help='number of epochs')
     parser.add_argument('--batch_size', default=64, type=int, help='batch size')
     parser.add_argument('--lr', default=0.0001, type=float, help='learning rate')
     parser.add_argument('--clip_grad', default=10, type=int, help='clip grad')
