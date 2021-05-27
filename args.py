@@ -32,6 +32,9 @@ def parse_args(mode='train'):
     parser.add_argument('--n_heads', default=2, type=int, help='number of heads')
     parser.add_argument('--drop_out', default=0.2, type=float, help='drop out rate')
 
+    # Optimizer
+    parser.add_argument('--weight_decay', default=0.01, type=float, help='weight decay of optimizer')
+
     # 훈련
     parser.add_argument('--n_epochs', default=20, type=int, help='number of epochs')
     parser.add_argument('--batch_size', default=64, type=int, help='batch size')
