@@ -2,7 +2,7 @@ import os
 import argparse
 
 
-def parse_args(mode='train'):
+def parse_args(mode):
     parser = argparse.ArgumentParser()
     parser.add_argument('--seed', default=42, type=int, help='seed')
 
@@ -23,8 +23,9 @@ def parse_args(mode='train'):
     parser.add_argument('--num_workers', default=1, type=int, help='number of workers')
 
     # wandb
-    parser.add_argument('--prefix', required=True, type=str, help='prefix of wandb run name (e.g. username or initials).')
-    parser.add_argument('--run_name', type=str, help='wandb run name. Defaults to current time')
+    if mode == 'train':
+        parser.add_argument('--prefix', required=True, type=str, help='prefix of wandb run name (e.g. username or initials).')
+        parser.add_argument('--run_name', type=str, help='wandb run name. Defaults to current time')
 
     # 모델
     parser.add_argument('--hidden_dim', default=64, type=int, help='hidden dimension size')
@@ -33,7 +34,7 @@ def parse_args(mode='train'):
     parser.add_argument('--drop_out', default=0.2, type=float, help='drop out rate')
 
     # 훈련
-    parser.add_argument('--n_epochs', default=20, type=int, help='number of epochs')
+    parser.add_argument('--n_epochs', default=100, type=int, help='number of epochs')
     parser.add_argument('--batch_size', default=64, type=int, help='batch size')
     parser.add_argument('--lr', default=0.0001, type=float, help='learning rate')
     parser.add_argument('--clip_grad', default=10, type=int, help='clip grad')

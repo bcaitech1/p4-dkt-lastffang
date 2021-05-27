@@ -28,7 +28,7 @@ python train.py --prefix prefix --run_name run_name --model_dir models/model_dir
 
 * Inference
 ```bash
-python inference.py --prefix prefix --run_name run_name --model_dir models/model_dir
+python inference.py --model_dir models/model_dir
 ```
 
 * Train & Inference를 한 번에 실행하기
