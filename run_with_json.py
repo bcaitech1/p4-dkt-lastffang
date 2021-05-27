@@ -16,7 +16,7 @@ arguments = []
 
 for k in cfg:
     arguments.append("--" + k)
-    arguments.append(cfg[k])
+    arguments.append(str(cfg[k]))
 
 # Train Model
 call(["python", "train.py"] + arguments)
