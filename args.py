@@ -33,12 +33,16 @@ def parse_args(mode):
     parser.add_argument('--n_heads', default=2, type=int, help='number of heads')
     parser.add_argument('--drop_out', default=0.2, type=float, help='drop out rate')
 
+    # Optimizer
+    parser.add_argument('--weight_decay', default=0.01, type=float, help='weight decay of optimizer')
+
     # 훈련
     parser.add_argument('--n_epochs', default=20, type=int, help='number of epochs')
     parser.add_argument('--batch_size', default=64, type=int, help='batch size')
     parser.add_argument('--lr', default=0.0001, type=float, help='learning rate')
     parser.add_argument('--clip_grad', default=10, type=int, help='clip grad')
     parser.add_argument('--patience', default=5, type=int, help='for early stopping')
+    parser.add_argument('--warmup_ratio', default=0.1, type=float, help='warmup step ratio')
 
 
     parser.add_argument('--log_steps', default=50, type=int, help='print log per n steps')
@@ -48,6 +52,7 @@ def parse_args(mode):
     parser.add_argument('--model', default='lstm', type=str, help='model type')
     parser.add_argument('--optimizer', default='adam', type=str, help='optimizer type')
     parser.add_argument('--scheduler', default='plateau', type=str, help='scheduler type')
+    parser.add_argument('--criterion', default='BCE', type=str, help='criterion type')
 
     args = parser.parse_args()
 
