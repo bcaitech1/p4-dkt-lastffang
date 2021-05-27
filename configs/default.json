@@ -1,0 +1,7 @@
+{
+	"prefix": "sb",
+	"run_name": "baseline",
+	"model_dir": "models/baseline",
+	"model": "lstm",
+	"output_dir": "output/baseline"
+}
