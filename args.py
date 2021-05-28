@@ -36,6 +36,10 @@ def parse_args(mode):
     # Optimizer
     parser.add_argument('--weight_decay', default=0.01, type=float, help='weight decay of optimizer')
 
+    # Scheduler
+    parser.add_argument('--plateau_patience', default=10, type=int, help='patience of plateau scheduler')
+    parser.add_argument('--plateau_factor', default=0.5, type=float, help='factor of plateau scheduler')
+
     # 훈련
     parser.add_argument('--n_epochs', default=20, type=int, help='number of epochs')
     parser.add_argument('--batch_size', default=64, type=int, help='batch size')

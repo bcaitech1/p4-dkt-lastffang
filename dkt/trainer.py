@@ -74,7 +74,7 @@ def train(train_loader, model, optimizer, args):
         targets = input[3] # correct
 
 
-        loss = compute_loss(preds, targets)
+        loss = compute_loss(preds, targets, args)
         update_params(loss, model, optimizer, args)
 
         if step % args.log_steps == 0:
@@ -244,14 +244,14 @@ def process_batch(batch, args):
 
 
 # loss계산하고 parameter update!
-def compute_loss(preds, targets):
+def compute_loss(preds, targets, args):
     """
     Args :
         preds   : (batch_size, max_seq_len)
         targets : (batch_size, max_seq_len)
 
     """
-    loss = get_criterion(preds, targets)
+    loss = get_criterion(preds, targets, args)
     #마지막 시퀀스에 대한 값만 loss 계산
     loss = loss[:,-1]
     loss = torch.mean(loss)
