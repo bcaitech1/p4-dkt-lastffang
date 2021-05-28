@@ -7,13 +7,13 @@ import random
 from sklearn.preprocessing import LabelEncoder
 import numpy as np
 import torch
+from torch.nn.utils.rnn import pad_sequence
 
 class Preprocess:
     def __init__(self,args):
         self.args = args
         self.train_data = None
         self.test_data = None
-        
 
     def get_train_data(self):
         return self.train_data
@@ -40,14 +40,15 @@ class Preprocess:
         np.save(le_path, encoder.classes_)
 
     def __preprocessing(self, df, is_train = True):
-        cate_cols = ['assessmentItemID', 'testId', 'KnowledgeTag']
+
+        # 여기는 설정해주는
+        # cate_cols = ['assessmentItemID', 'testId', 'KnowledgeTag']
+        ###############
 
         if not os.path.exists(self.args.asset_dir):
             os.makedirs(self.args.asset_dir)
             
-        for col in cate_cols:
-            
-            
+        for col in self.args.cate_cols:
             le = LabelEncoder()
             if is_train:
                 #For UNKNOWN class
@@ -74,35 +75,67 @@ class Preprocess:
         
         return df
 
-    def __feature_engineering(self, df):
+    def __feature_engineering_num(self, df):
         #TODO
+        
+        # large category (대분류)
+        df['large_category'] = df['testId'].apply(lambda x:int(x[2]))
+        # print(df.head())
+
+        self.args.num_cols.append('large_category')
+        
+        return df
+
+    def __feature_engineering_cate(self, df):
+        #TODO
+        
+        # large category (대분류)
+        # df['large_category'] = df['testId'].apply(lambda x:int(x[2]))
+        # print(df.head())
+        
+        # self.args.cate_cols.append('large_category')
         return df
 
     def load_data_from_file(self, file_name, is_train=True):
         csv_file_path = os.path.join(self.args.data_dir, file_name)
         df = pd.read_csv(csv_file_path)#, nrows=100000)
-        df = self.__feature_engineering(df)
+        df = self.__feature_engineering_num(df)
+        df = self.__feature_engineering_cate(df)
         df = self.__preprocessing(df, is_train)
+
+        # print(df.head())
+        # print(self.args.num_cols, self.args.cate_cols)
+        # exit()
 
         # 추후 feature를 embedding할 시에 embedding_layer의 input 크기를 결정할때 사용
 
-                
-        self.args.n_questions = len(np.load(os.path.join(self.args.asset_dir,'assessmentItemID_classes.npy')))
-        self.args.n_test = len(np.load(os.path.join(self.args.asset_dir,'testId_classes.npy')))
-        self.args.n_tag = len(np.load(os.path.join(self.args.asset_dir,'KnowledgeTag_classes.npy')))
+        # 여기는 설정해주는
+        # cate_cols = ['assessmentItemID', 'testId', 'KnowledgeTag']
+        ###############
+
+        self.args.cate_len = {}
+
+        for cate_name in self.args.cate_cols:
+            self.args.cate_len[cate_name] = len(np.load(os.path.join(self.args.asset_dir,f'{cate_name}_classes.npy')))
+            # self.args.n_questions = len(np.load(os.path.join(self.args.asset_dir,'assessmentItemID_classes.npy')))
+            # self.args.n_test = len(np.load(os.path.join(self.args.asset_dir,'testId_classes.npy')))
+            # self.args.n_tag = len(np.load(os.path.join(self.args.asset_dir,'KnowledgeTag_classes.npy')))
+
         
-
-
         df = df.sort_values(by=['userID','Timestamp'], axis=0)
-        columns = ['userID', 'assessmentItemID', 'testId', 'answerCode', 'KnowledgeTag']
+        columns = ['userID'] + self.args.cate_cols + self.args.num_cols
+        # columns = ['userID', 'assessmentItemID', 'testId', 'answerCode', 'KnowledgeTag']
+
         group = df[columns].groupby('userID').apply(
-                lambda r: (
-                    r['testId'].values, 
-                    r['assessmentItemID'].values,
-                    r['KnowledgeTag'].values,
-                    r['answerCode'].values
-                )
-            )
+            lambda x : tuple([x[col].values for col in self.args.cate_cols + self.args.num_cols]))
+        # group = df[columns].groupby('userID').apply(
+        #         map(
+        #             lambda r: (
+        #                 r[col].values
+        #             )
+        #             , self.args.cate_cols + self.args.num_cols
+        #         )
+        #     )
 
         return group.values
 
@@ -119,15 +152,18 @@ class DKTDataset(torch.utils.data.Dataset):
         self.args = args
 
     def __getitem__(self, index):
+        # category, numeric
         row = self.data[index]
-
+        
         # 각 data의 sequence length
         seq_len = len(row[0])
 
-        test, question, tag, correct = row[0], row[1], row[2], row[3]
+        # print(row, seq_len)
+        # exit()
+        cate_cols = [row[i] for i in range(len(row))]
         
-
-        cate_cols = [test, question, tag, correct]
+        # test, question, tag, correct = row[0], row[1], row[2], row[3]
+        # cate_cols = [test, question, tag, correct]
 
         # max seq len을 고려하여서 이보다 길면 자르고 아닐 경우 그대로 냅둔다
         if seq_len > self.args.max_seq_len:
@@ -145,20 +181,18 @@ class DKTDataset(torch.utils.data.Dataset):
         for i, col in enumerate(cate_cols):
             cate_cols[i] = torch.tensor(col)
 
+        # cate + num + mask
         return cate_cols
 
     def __len__(self):
         return len(self.data)
 
 
-from torch.nn.utils.rnn import pad_sequence
-
 def collate(batch):
     col_n = len(batch[0])
     col_list = [[] for _ in range(col_n)]
     max_seq_len = len(batch[0][-1])
 
-        
     # batch의 값들을 각 column끼리 그룹화
     for row in batch:
         for i, col in enumerate(row):
@@ -174,8 +208,7 @@ def collate(batch):
 
 
 def get_loaders(args, train, valid):
-
-    pin_memory = False
+    pin_memory = True
     train_loader, valid_loader = None, None
     
     if train is not None:

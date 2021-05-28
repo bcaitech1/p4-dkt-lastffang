@@ -16,12 +16,22 @@ def main(args):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     args.device = device
 
+    args.cate_cols = ['assessmentItemID', 'testId', 'KnowledgeTag']
+    args.num_cols = ['answerCode']
+
     preprocess = Preprocess(args)
     preprocess.load_train_data(args.file_name)
     train_data = preprocess.get_train_data()
 
-    train_data, valid_data = preprocess.split_data(train_data)
-
+    train_data, valid_data = preprocess.split_data(train_data, shuffle=True)
+    # print(train_data[0])
+    # col = ['testId','assessmentItemID',  'KnowledgeTag', 'answerCode']
+    # for idx, element in enumerate(train_data[0]):
+    #     print(col[idx], element.shape, element)
+    # print(train_data[0].shape)
+    # print(valid_data.shape)
+    # print(train_data.shape, valid_data.shape)
+    # exit()
     if not args.run_name:
         args.run_name = datetime.now(timezone("Asia/Seoul")).strftime("%Y-%m-%d-%H:%M:%S")
 
