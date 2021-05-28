@@ -1,6 +1,9 @@
 import os
 import argparse
+import json
 
+with open('arg_choices.json') as f:
+    choices = json.load(f)
 
 def parse_args(mode):
     parser = argparse.ArgumentParser()
@@ -53,10 +56,10 @@ def parse_args(mode):
 
 
     ### 중요 ###
-    parser.add_argument('--model', default='lstm', type=str, help='model type')
-    parser.add_argument('--optimizer', default='adam', type=str, help='optimizer type')
-    parser.add_argument('--scheduler', default='plateau', type=str, help='scheduler type')
-    parser.add_argument('--criterion', default='BCE', type=str, help='criterion type')
+    parser.add_argument('--model', default='lstm', type=str, choices=choices["model_options"], help='model type')
+    parser.add_argument('--optimizer', default='adam', type=str, choices=choices["optimizer_options"], help='optimizer type')
+    parser.add_argument('--scheduler', default='plateau', type=str, choices=choices["scheduler_options"], help='scheduler type')
+    parser.add_argument('--criterion', default='BCE', type=str, choices=choices["criterion_options"], help='criterion type')
 
     args = parser.parse_args()
 
