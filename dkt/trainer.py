@@ -17,7 +17,7 @@ def run(args, train_data, valid_data):
 
     # only when using warmup scheduler
     args.total_steps = int(len(train_loader.dataset) / args.batch_size) * (args.n_epochs)
-    args.warmup_steps = args.total_steps // 10
+    args.warmup_steps = int(args.total_steps * args.warmup_ratio)
 
     model = get_model(args)
     optimizer = get_optimizer(model, args)
@@ -74,7 +74,7 @@ def train(train_loader, model, optimizer, args):
         targets = input[3] # correct
 
 
-        loss = compute_loss(preds, targets)
+        loss = compute_loss(preds, targets, args)
         update_params(loss, model, optimizer, args)
 
         if step % args.log_steps == 0:
@@ -244,15 +244,15 @@ def process_batch(batch, args):
 
 
 # loss계산하고 parameter update!
-def compute_loss(preds, targets):
+def compute_loss(preds, targets, args):
     """
     Args :
         preds   : (batch_size, max_seq_len)
         targets : (batch_size, max_seq_len)
 
     """
-    loss = get_criterion(preds, targets)
-    #마지막 시퀀드에 대한 값만 loss 계산
+    loss = get_criterion(preds, targets, args)
+    #마지막 시퀀스에 대한 값만 loss 계산
     loss = loss[:,-1]
     loss = torch.mean(loss)
     return loss

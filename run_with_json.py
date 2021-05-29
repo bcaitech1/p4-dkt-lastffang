@@ -12,14 +12,19 @@ with open(args.cfg) as f:
     cfg = json.load(f)
 
 
-arguments = []
+train_arguments = []
+inf_arguments = []
 
 for k in cfg:
-    arguments.append("--" + k)
-    arguments.append(str(cfg[k]))
+    train_arguments.append("--" + k)
+    train_arguments.append(cfg[k])
+    if k == 'prefix' or k == 'run_name':
+        continue
+    inf_arguments.append("--" + k)
+    inf_arguments.append(cfg[k])
 
 # Train Model
-call(["python", "train.py"] + arguments)
+call(["python", "train.py"] + train_arguments)
 
 # Inference file
-call(["python", "inference.py"] + arguments)
+call(["python", "inference.py"] + inf_arguments)
