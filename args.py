@@ -1,8 +1,11 @@
 import os
 import argparse
+import json
 
+with open('arg_choices.json') as f:
+    choices = json.load(f)
 
-def parse_args(mode='train'):
+def parse_args(mode):
     parser = argparse.ArgumentParser()
     parser.add_argument('--seed', default=42, type=int, help='seed')
 
@@ -23,8 +26,9 @@ def parse_args(mode='train'):
     parser.add_argument('--num_workers', default=1, type=int, help='number of workers')
 
     # wandb
-    parser.add_argument('--prefix', required=True, type=str, help='prefix of wandb run name (e.g. username or initials).')
-    parser.add_argument('--run_name', type=str, help='wandb run name. Defaults to current time')
+    if mode == 'train':
+        parser.add_argument('--prefix', required=True, type=str, help='prefix of wandb run name (e.g. username or initials).')
+        parser.add_argument('--run_name', type=str, help='wandb run name. Defaults to current time')
 
     # 모델
     parser.add_argument('--hidden_dim', default=64, type=int, help='hidden dimension size')
@@ -32,21 +36,30 @@ def parse_args(mode='train'):
     parser.add_argument('--n_heads', default=2, type=int, help='number of heads')
     parser.add_argument('--drop_out', default=0.2, type=float, help='drop out rate')
 
+    # Optimizer
+    parser.add_argument('--weight_decay', default=0.01, type=float, help='weight decay of optimizer')
+
+    # Scheduler
+    parser.add_argument('--plateau_patience', default=10, type=int, help='patience of plateau scheduler')
+    parser.add_argument('--plateau_factor', default=0.5, type=float, help='factor of plateau scheduler')
+
     # 훈련
     parser.add_argument('--n_epochs', default=20, type=int, help='number of epochs')
     parser.add_argument('--batch_size', default=64, type=int, help='batch size')
     parser.add_argument('--lr', default=0.0001, type=float, help='learning rate')
     parser.add_argument('--clip_grad', default=10, type=int, help='clip grad')
     parser.add_argument('--patience', default=5, type=int, help='for early stopping')
+    parser.add_argument('--warmup_ratio', default=0.1, type=float, help='warmup step ratio')
 
 
     parser.add_argument('--log_steps', default=50, type=int, help='print log per n steps')
 
 
     ### 중요 ###
-    parser.add_argument('--model', default='lstm', type=str, help='model type')
-    parser.add_argument('--optimizer', default='adam', type=str, help='optimizer type')
-    parser.add_argument('--scheduler', default='plateau', type=str, help='scheduler type')
+    parser.add_argument('--model', default='lstm', type=str, choices=choices["model_options"], help='model type')
+    parser.add_argument('--optimizer', default='adam', type=str, choices=choices["optimizer_options"], help='optimizer type')
+    parser.add_argument('--scheduler', default='plateau', type=str, choices=choices["scheduler_options"], help='scheduler type')
+    parser.add_argument('--criterion', default='BCE', type=str, choices=choices["criterion_options"], help='criterion type')
 
     args = parser.parse_args()
 

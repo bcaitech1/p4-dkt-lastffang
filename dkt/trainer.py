@@ -16,7 +16,7 @@ def run(args, train_data, valid_data):
     
     # only when using warmup scheduler
     args.total_steps = int(len(train_loader.dataset) / args.batch_size) * (args.n_epochs)
-    args.warmup_steps = args.total_steps // 10
+    args.warmup_steps = int(args.total_steps * args.warmup_ratio)
 
     model = get_model(args)
     optimizer = get_optimizer(model, args)
@@ -76,7 +76,7 @@ def train(train_loader, model, optimizer, args):
         + 추가 num
         + 'mask'
         '''
-
+        
         preds = model(input)
         targets = input[0] # correct
         loss = compute_loss(preds, targets)

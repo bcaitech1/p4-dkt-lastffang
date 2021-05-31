@@ -24,6 +24,6 @@ def main(args):
     
 
 if __name__ == "__main__":
-    args = parse_args(mode='train')
+    args = parse_args(mode='inference')
     os.makedirs(args.model_dir, exist_ok=True)
     main(args)
