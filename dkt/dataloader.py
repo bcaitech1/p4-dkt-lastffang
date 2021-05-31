@@ -79,10 +79,10 @@ class Preprocess:
         #TODO
         
         # large category (대분류)
-        df['large_category'] = df['testId'].apply(lambda x:int(x[2]))
-        # print(df.head())
+        # df['large_category'] = df['testId'].apply(lambda x:int(x[2]))
+        # # print(df.head())
 
-        self.args.num_cols.append('large_category')
+        # self.args.num_cols.append('large_category')
         
         return df
 
@@ -90,10 +90,10 @@ class Preprocess:
         #TODO
         
         # large category (대분류)
-        # df['large_category'] = df['testId'].apply(lambda x:int(x[2]))
-        # print(df.head())
+        df['large_category'] = df['testId'].apply(lambda x:int(x[2]))
+        print(df.head())
         
-        # self.args.cate_cols.append('large_category')
+        self.args.cate_cols.append('large_category')
         return df
 
     def load_data_from_file(self, file_name, is_train=True):

@@ -16,8 +16,8 @@ def main(args):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     args.device = device
 
-    args.cate_cols = ['assessmentItemID', 'testId', 'KnowledgeTag']
-    args.num_cols = ['answerCode']
+    args.cate_cols = ['answerCode', 'assessmentItemID', 'testId', 'KnowledgeTag']
+    args.num_cols = []
 
     preprocess = Preprocess(args)
     preprocess.load_train_data(args.file_name)
