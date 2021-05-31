@@ -40,11 +40,6 @@ class Preprocess:
         np.save(le_path, encoder.classes_)
 
     def __preprocessing(self, df, is_train = True):
-
-        # 여기는 설정해주는
-        # cate_cols = ['assessmentItemID', 'testId', 'KnowledgeTag']
-        ###############
-
         if not os.path.exists(self.args.asset_dir):
             os.makedirs(self.args.asset_dir)
             
@@ -76,21 +71,28 @@ class Preprocess:
         return df
 
     def __feature_engineering_num(self, df):
-        #TODO
-        
-        # large category (대분류)
-        # df['large_category'] = df['testId'].apply(lambda x:int(x[2]))
-        # # print(df.head())
+        '''        
+        연속형 데이터를 데이터에 추가
 
-        # self.args.num_cols.append('large_category')
-        
+        1. df에서 추가하시고
+        2. self.args.num_cols에 feature 이름 추가해주시면 됩니다
+        '''
+
+        # self.args.num_cols.append()
+
         return df
 
     def __feature_engineering_cate(self, df):
-        #TODO
+        '''        
+        카테고리형 데이터를 데이터에 추가
+
+        1. df에서 추가하시고
+        2. self.args.cate_cols에 feature 이름 추가해주시면 됩니다
+        '''
         
         # large category (대분류)
         df['large_category'] = df['testId'].apply(lambda x:int(x[2]))
+
         print(df.head())
         
         self.args.cate_cols.append('large_category')
@@ -103,39 +105,40 @@ class Preprocess:
         df = self.__feature_engineering_cate(df)
         df = self.__preprocessing(df, is_train)
 
-        # print(df.head())
-        # print(self.args.num_cols, self.args.cate_cols)
-        # exit()
+        '''
+        cate_len : 추후 category feature를 embedding할 시에 (model.py) embedding_layer의 input 크기를 결정할때 사용
+        dictionary에 저장
 
-        # 추후 feature를 embedding할 시에 embedding_layer의 input 크기를 결정할때 사용
-
-        # 여기는 설정해주는
-        # cate_cols = ['assessmentItemID', 'testId', 'KnowledgeTag']
-        ###############
+        원래 코드
+        # self.args.n_questions = len(np.load(os.path.join(self.args.asset_dir,'assessmentItemID_classes.npy')))
+        # self.args.n_test = len(np.load(os.path.join(self.args.asset_dir,'testId_classes.npy')))
+        # self.args.n_tag = len(np.load(os.path.join(self.args.asset_dir,'KnowledgeTag_classes.npy')))
+        '''
 
         self.args.cate_len = {}
 
         for cate_name in self.args.cate_cols:
             self.args.cate_len[cate_name] = len(np.load(os.path.join(self.args.asset_dir,f'{cate_name}_classes.npy')))
-            # self.args.n_questions = len(np.load(os.path.join(self.args.asset_dir,'assessmentItemID_classes.npy')))
-            # self.args.n_test = len(np.load(os.path.join(self.args.asset_dir,'testId_classes.npy')))
-            # self.args.n_tag = len(np.load(os.path.join(self.args.asset_dir,'KnowledgeTag_classes.npy')))
 
-        
         df = df.sort_values(by=['userID','Timestamp'], axis=0)
         columns = ['userID'] + self.args.cate_cols + self.args.num_cols
-        # columns = ['userID', 'assessmentItemID', 'testId', 'answerCode', 'KnowledgeTag']
 
+        '''
+        df에서 카테고리 데이터를 label encoding한 내용으로 변환
+        순서는 category + num
+
+        원래 코드
+        group = df[columns].groupby('userID').apply(
+                lambda r: (
+                    r['testId'].values, 
+                    r['assessmentItemID'].values,
+                    r['KnowledgeTag'].values,
+                    r['answerCode'].values
+                )
+            )
+        '''
         group = df[columns].groupby('userID').apply(
             lambda x : tuple([x[col].values for col in self.args.cate_cols + self.args.num_cols]))
-        # group = df[columns].groupby('userID').apply(
-        #         map(
-        #             lambda r: (
-        #                 r[col].values
-        #             )
-        #             , self.args.cate_cols + self.args.num_cols
-        #         )
-        #     )
 
         return group.values
 
@@ -158,12 +161,17 @@ class DKTDataset(torch.utils.data.Dataset):
         # 각 data의 sequence length
         seq_len = len(row[0])
 
-        # print(row, seq_len)
-        # exit()
+        '''
+        원래 코드
+        test, question, tag, correct = row[0], row[1], row[2], row[3]
+        cate_cols = [test, question, tag, correct]
+        '''
         cate_cols = [row[i] for i in range(len(row))]
-        
-        # test, question, tag, correct = row[0], row[1], row[2], row[3]
-        # cate_cols = [test, question, tag, correct]
+
+        '''
+        #TODO
+        max_seq_len까지만 사용, 나머지는 버리는데 이부분에서 data augmentation 필요
+        '''
 
         # max seq len을 고려하여서 이보다 길면 자르고 아닐 경우 그대로 냅둔다
         if seq_len > self.args.max_seq_len:
@@ -181,7 +189,7 @@ class DKTDataset(torch.utils.data.Dataset):
         for i, col in enumerate(cate_cols):
             cate_cols[i] = torch.tensor(col)
 
-        # cate + num + mask
+        # category, numeric, mask
         return cate_cols
 
     def __len__(self):
@@ -199,7 +207,6 @@ def collate(batch):
             pre_padded = torch.zeros(max_seq_len)
             pre_padded[-len(col):] = col
             col_list[i].append(pre_padded)
-
 
     for i, _ in enumerate(col_list):
         col_list[i] =torch.stack(col_list[i])

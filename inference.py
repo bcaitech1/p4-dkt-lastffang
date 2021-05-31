@@ -7,6 +7,13 @@ def main(args):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     args.device = device
 
+    '''
+    기본 baseline의 features
+    preprocess에서 feature engineering을 거치면 뒤에 더 추가됨
+    '''
+    args.cate_cols = ['answerCode', 'assessmentItemID', 'testId', 'KnowledgeTag']
+    args.num_cols = []
+    
     
     preprocess = Preprocess(args)
     preprocess.load_test_data(args.test_file_name)
