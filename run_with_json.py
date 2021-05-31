@@ -17,11 +17,11 @@ inf_arguments = []
 
 for k in cfg:
     train_arguments.append("--" + k)
-    train_arguments.append(cfg[k])
+    train_arguments.append(str(cfg[k]))
     if k == 'prefix' or k == 'run_name':
         continue
     inf_arguments.append("--" + k)
-    inf_arguments.append(cfg[k])
+    inf_arguments.append(str(cfg[k]))
 
 # Train Model
 call(["python", "train.py"] + train_arguments)
