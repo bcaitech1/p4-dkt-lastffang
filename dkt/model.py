@@ -145,19 +145,34 @@ class RNNATTN(nn.Module):
         self.n_heads = self.args.n_heads
         self.drop_out = self.args.drop_out
 
-        # Embedding
-        # interaction은 현재 correct로 구성되어있다. correct(1, 2) + padding(0)
-        
-        # Numeric
-        self.embedding_interaction = nn.Embedding(3, self.hidden_dim//3)
+        '''
+        cate_embedding_layers에 category embedding layer들이 list로 저장
+        cate_len dictionary에 key : cate_column의 이름, value : category의 개수 
 
-        # Categorical
+        원래 코드
+        interaction은 현재 correct로 구성되어있다. correct(1, 2) + padding(0)
+        self.embedding_interaction = nn.Embedding(3, self.hidden_dim//3)
         self.embedding_test = nn.Embedding(self.args.n_test + 1, self.hidden_dim//3)
         self.embedding_question = nn.Embedding(self.args.n_questions + 1, self.hidden_dim//3)
         self.embedding_tag = nn.Embedding(self.args.n_tag + 1, self.hidden_dim//3)
+        '''
 
-        # embedding combination projection
-        self.comb_proj = nn.Linear((self.hidden_dim//3)*4, self.hidden_dim)
+        # Embedding
+        self.cate_embedding_layers = \
+            [nn.Embedding(self.args.cate_len[cate_col] + 1, self.hidden_dim//3).to(args.device) for cate_col in self.args.cate_cols]
+
+        if len(self.args.num_cols) == 0:
+            self.num_embedding_layers = None
+            # embedding combination projection
+            self.comb_proj = nn.Linear((self.hidden_dim//3)*(len(self.cate_embedding_layers)) \
+                , self.hidden_dim)
+        else:
+            self.num_embedding_layers = nn.Linear(len(self.args.num_cols), self.hidden_dim//2)
+            # cont_emb = nn.Sequential(nn.Linear(cont_col_size, CFG.hidden_size//2),
+            #                         nn.LayerNorm(CFG.hidden_size//2))
+            self.comb_proj = nn.Linear((self.hidden_dim//3)*(len(self.cate_embedding_layers)) \
+                , self.hidden_dim//2)
+
 
         if self.args.model == "lstmattn":
             self.rnn = nn.LSTM(self.hidden_dim,
@@ -206,25 +221,73 @@ class RNNATTN(nn.Module):
         return (h, c)
 
     def forward(self, input):
+        '''
+        input 순서는 category + numeric + mask
 
-        test, question, tag, _, mask, interaction, _ = input
+        'answerCode', 'interaction', 'assessmentItemID', 'testId', 'KnowledgeTag', + 추가 category
+        추가 num
+        'mask'
 
-        batch_size = interaction.size(0)
+        원래 코드
+        test, question, tag, _, mask, interaction = input
+        '''
+        
+        batch_size = input[1].size(0)
+        cate_inputs = input[1:len(self.args.cate_cols)+1]
+        num_inputs = input[len(self.args.cate_cols)+1:len(self.args.cate_cols)+len(self.args.num_cols)+1]
+        mask = input[-1]
 
         # Embedding
+        '''
+        cate_embedding_layers에 input(data) 넣어서 feature로 output
 
+        원래 코드
         embed_interaction = self.embedding_interaction(interaction)
         embed_test = self.embedding_test(test)
         embed_question = self.embedding_question(question)
         embed_tag = self.embedding_tag(tag)
+        '''
+
+        # Embedding
+        if self.num_embedding_layers is None:
+            embed_cate_features = torch.cat(
+                [cate_embedding_layer(cate_input) for cate_input, cate_embedding_layer \
+                in zip(cate_inputs, self.cate_embedding_layers)], 2)
+            X = self.comb_proj(embed_cate_features)
+        else:
+            num_inputs = torch.stack(list(num_inputs), dim=0).view(batch_size, -1, len(num_inputs))
+            # print(num_inputs.shape)
+            embed_num_features = self.num_embedding_layers(num_inputs)
+            # print(embed_num_features.shape)
+
+            embed_cate_features = torch.cat(
+                [cate_embedding_layer(cate_input) for cate_input, cate_embedding_layer \
+                in zip(cate_inputs, self.cate_embedding_layers)], 2)
 
 
-        embed = torch.cat([embed_interaction,
-                           embed_test,
-                           embed_question,
-                           embed_tag,], 2)
+            # print(embed_num_features.shape, embed_cate_features.shape)
+            # exit()
+            embed_cate_features = self.comb_proj(embed_cate_features)
+            # print(embed_num_features.shape, embed_cate_features.shape)
+            # print(embed_num_features.dtype, embed_cate_features.dtype)
+            X = torch.cat([embed_num_features,
+                           embed_cate_features], 2)
+            # print(X.dtype)
 
-        X = self.comb_proj(embed)
+
+
+        # embed_interaction = self.embedding_interaction(interaction)
+        # embed_test = self.embedding_test(test)
+        # embed_question = self.embedding_question(question)
+        # embed_tag = self.embedding_tag(tag)
+
+
+        # embed = torch.cat([embed_interaction,
+        #                    embed_test,
+        #                    embed_question,
+        #                    embed_tag,], 2)
+
+        # X = self.comb_proj(embed)
 
         hidden = self.init_hidden(batch_size)
         out, hidden = self.rnn(X, hidden)
