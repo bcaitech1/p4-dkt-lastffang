@@ -79,7 +79,6 @@ def train(train_loader, model, optimizer, args):
 
         preds = model(input)
         targets = input[0] # correct
-        # print(preds.dtype, targets.dtype)
         loss = compute_loss(preds, targets, args)
         update_params(loss, model, optimizer, args)
 
