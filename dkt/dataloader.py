@@ -78,6 +78,15 @@ class Preprocess:
         2. self.args.num_cols에 feature 이름 추가해주시면 됩니다
         '''
 
+        df['answer_mean'] = df.groupby('userID')['answerCode'].transform('mean') # 사용자별 정답률
+        df['assessment_category_mean'] = df.groupby('large_category')['answerCode'].transform('mean') # 대분류의 정답률
+        df['knowledge_tag_mean'] = df.groupby('KnowledgeTag')['answerCode'].transform('mean') # 지식 태그 분류별 정답률
+        #df['solved_count'] = df.groupby('userID')['assessmentItemID'].transform('count') # 학생별 푼 문제수
+        df['testId_answer_rate'] = df.groupby('testId')['answerCode'].transform('mean') #시험지 별로 정답률
+        df['assessmentItemID_answer_rate'] = df.groupby('assessmentItemID')['answerCode'].transform('mean') #문항별 정답률
+
+        self.args.num_cols.extend(['answer_mean', 'assessment_category_mean', \
+            'knowledge_tag_mean', 'testId_answer_rate', 'assessmentItemID_answer_rate'])
         # self.args.num_cols.append()
 
         return df
@@ -89,21 +98,26 @@ class Preprocess:
         1. df에서 추가하시고
         2. self.args.cate_cols에 feature 이름 추가해주시면 됩니다
         '''
-        
+
         # large category (대분류)
         df['large_category'] = df['testId'].apply(lambda x:int(x[2]))
 
         print(df.head())
         
-        self.args.cate_cols.append('large_category')
+        self.args.cate_cols.extend(['large_category'])
         return df
 
     def load_data_from_file(self, file_name, is_train=True):
         csv_file_path = os.path.join(self.args.data_dir, file_name)
         df = pd.read_csv(csv_file_path)#, nrows=100000)
-        df = self.__feature_engineering_num(df)
+
+        print('Before feature engineering : ', self.args.cate_cols, self.args.num_cols)
+
         df = self.__feature_engineering_cate(df)
+        df = self.__feature_engineering_num(df)
         df = self.__preprocessing(df, is_train)
+
+        print('After feature engineering : ', self.args.cate_cols, self.args.num_cols)
 
         '''
         cate_len : 추후 category feature를 embedding할 시에 (model.py) embedding_layer의 input 크기를 결정할때 사용

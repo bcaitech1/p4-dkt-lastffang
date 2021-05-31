@@ -36,9 +36,17 @@ class LSTM(nn.Module):
         self.cate_embedding_layers = \
             [nn.Embedding(self.args.cate_len[cate_col] + 1, self.hidden_dim//3).to(args.device) for cate_col in self.args.cate_cols]
 
-        # embedding combination projection
-        self.comb_proj = nn.Linear((self.hidden_dim//3)*(len(self.cate_embedding_layers)) \
-            , self.hidden_dim)
+        if len(self.args.num_cols) == 0:
+            self.num_embedding_layers = None
+            # embedding combination projection
+            self.comb_proj = nn.Linear((self.hidden_dim//3)*(len(self.cate_embedding_layers)) \
+                , self.hidden_dim)
+        else:
+            self.num_embedding_layers = nn.Linear(len(self.args.num_cols), self.hidden_dim//2)
+            # cont_emb = nn.Sequential(nn.Linear(cont_col_size, CFG.hidden_size//2),
+            #                         nn.LayerNorm(CFG.hidden_size//2))
+            self.comb_proj = nn.Linear((self.hidden_dim//3)*(len(self.cate_embedding_layers)) \
+                , self.hidden_dim//2)
 
         self.lstm = nn.LSTM(self.hidden_dim,
                             self.hidden_dim,
@@ -92,16 +100,30 @@ class LSTM(nn.Module):
         '''
 
         # Embedding
-        embed_cate_features = torch.cat(
-            [cate_embedding_layer(cate_input) for cate_input, cate_embedding_layer \
-            in zip(cate_inputs, self.cate_embedding_layers)], 2)
+        if self.num_embedding_layers is None:
+            embed_cate_features = torch.cat(
+                [cate_embedding_layer(cate_input) for cate_input, cate_embedding_layer \
+                in zip(cate_inputs, self.cate_embedding_layers)], 2)
+            X = self.comb_proj(embed_cate_features)
+        else:
+            num_inputs = torch.stack(list(num_inputs), dim=0).view(batch_size, -1, len(num_inputs))
+            # print(num_inputs.shape)
+            embed_num_features = self.num_embedding_layers(num_inputs)
+            # print(embed_num_features.shape)
 
-        # embed_num_features = [self.cate_embedding_layers(cate_feature) for cate_feature in input[:len(self.args.cate_cols]]
+            embed_cate_features = torch.cat(
+                [cate_embedding_layer(cate_input) for cate_input, cate_embedding_layer \
+                in zip(cate_inputs, self.cate_embedding_layers)], 2)
 
-        # embed = torch.cat([embed_interaction,
-        #                    embed_cate_features], 2)
 
-        X = self.comb_proj(embed_cate_features)
+            # print(embed_num_features.shape, embed_cate_features.shape)
+            # exit()
+            embed_cate_features = self.comb_proj(embed_cate_features)
+            # print(embed_num_features.shape, embed_cate_features.shape)
+            # print(embed_num_features.dtype, embed_cate_features.dtype)
+            X = torch.cat([embed_num_features,
+                           embed_cate_features], 2)
+            # print(X.dtype)
 
         hidden = self.init_hidden(batch_size)
         out, hidden = self.lstm(X, hidden)

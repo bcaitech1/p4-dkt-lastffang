@@ -79,7 +79,7 @@ def train(train_loader, model, optimizer, args):
 
         preds = model(input)
         targets = input[0] # correct
-
+        # print(preds.dtype, targets.dtype)
         loss = compute_loss(preds, targets)
         update_params(loss, model, optimizer, args)
 
@@ -220,11 +220,11 @@ def process_batch(batch, args):
 
     features = []
 
-    for name, feature in zip(args.cate_cols, cate_features):
+    for name, cate_feature in zip(args.cate_cols, cate_features):
         if name == 'answerCode':
             # correct
             # correct = correct.type(torch.FloatTensor)
-            features.append(feature.type(torch.FloatTensor))
+            features.append(cate_feature.type(torch.FloatTensor))
 
             '''
             interaction
@@ -234,7 +234,7 @@ def process_batch(batch, args):
             오피스아워에서 언급한 코드 수정내용 반영
             '''
 
-            interaction = feature + 1 # 패딩을 위해 correct값에 1을 더해준다.
+            interaction = cate_feature + 1 # 패딩을 위해 correct값에 1을 더해준다.
             interaction = interaction.roll(shifts=1, dims=1)
             interaction_mask = mask.roll(shifts=1, dims=1)
             interaction_mask[:, 0] = 0 # set padding index to the first sequence
@@ -251,14 +251,9 @@ def process_batch(batch, args):
             tag = ((tag + 1) * mask).to(torch.int64)
             '''
             # question, test, tag
-            features.append(((feature + 1) * mask).to(torch.int64))
+            features.append(((cate_feature + 1) * mask).to(torch.int64))
 
-
-    for name, feature in zip(args.num_cols, num_features):
-        if name == 'answerCode':
-            pass
-        else:
-            pass
+    [features.append((num_feature * mask).type(torch.FloatTensor)) for num_feature in num_features]
 
     # gather index
     # 마지막 sequence만 사용하기 위한 index
