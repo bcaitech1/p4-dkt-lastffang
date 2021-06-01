@@ -53,8 +53,9 @@ class Preprocess:
             else:
                 label_path = os.path.join(self.args.asset_dir,col+'_classes.npy')
                 le.classes_ = np.load(label_path)
-                
-                df[col] = df[col].apply(lambda x: x if x in le.classes_ else 'unknown')
+                print(df[col])
+                df[col] = df[col].apply(lambda x: x if str(x) in le.classes_ else 'unknown')
+                print(df[col])
 
             #모든 컬럼이 범주형이라고 가정
             df[col]= df[col].astype(str)
