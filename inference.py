@@ -3,7 +3,10 @@ from args import parse_args
 from dkt.dataloader import Preprocess
 from dkt import trainer
 import torch
+from dkt.utils import setSeeds
+
 def main(args):
+    setSeeds(42)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     args.device = device
 

@@ -163,12 +163,10 @@ def inference(args, test_data):
 
     for step, batch in enumerate(test_loader):
         input = process_batch(batch, args)
-
         preds = model(input)
-
         # predictions
         preds = preds[:,-1]
-
+        
         if args.device == 'cuda':
             preds = preds.to('cpu').detach().numpy()
         else: # cpu
@@ -317,7 +315,6 @@ def load_model(args):
 
     # 1. load model state
     model.load_state_dict(load_state['state_dict'], strict=True)
-
 
     print("Loading Model from:", model_path, "...Finished.")
     return model

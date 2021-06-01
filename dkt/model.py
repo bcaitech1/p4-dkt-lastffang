@@ -107,23 +107,16 @@ class LSTM(nn.Module):
             X = self.comb_proj(embed_cate_features)
         else:
             num_inputs = torch.stack(list(num_inputs), dim=0).view(batch_size, -1, len(num_inputs))
-            # print(num_inputs.shape)
             embed_num_features = self.num_embedding_layers(num_inputs)
-            # print(embed_num_features.shape)
 
             embed_cate_features = torch.cat(
                 [cate_embedding_layer(cate_input) for cate_input, cate_embedding_layer \
                 in zip(cate_inputs, self.cate_embedding_layers)], 2)
-
-
-            # print(embed_num_features.shape, embed_cate_features.shape)
-            # exit()
+            
             embed_cate_features = self.comb_proj(embed_cate_features)
-            # print(embed_num_features.shape, embed_cate_features.shape)
-            # print(embed_num_features.dtype, embed_cate_features.dtype)
+
             X = torch.cat([embed_num_features,
                            embed_cate_features], 2)
-            # print(X.dtype)
 
         hidden = self.init_hidden(batch_size)
         out, hidden = self.lstm(X, hidden)
@@ -256,38 +249,16 @@ class RNNATTN(nn.Module):
             X = self.comb_proj(embed_cate_features)
         else:
             num_inputs = torch.stack(list(num_inputs), dim=0).view(batch_size, -1, len(num_inputs))
-            # print(num_inputs.shape)
             embed_num_features = self.num_embedding_layers(num_inputs)
-            # print(embed_num_features.shape)
 
             embed_cate_features = torch.cat(
                 [cate_embedding_layer(cate_input) for cate_input, cate_embedding_layer \
                 in zip(cate_inputs, self.cate_embedding_layers)], 2)
 
-
-            # print(embed_num_features.shape, embed_cate_features.shape)
-            # exit()
             embed_cate_features = self.comb_proj(embed_cate_features)
-            # print(embed_num_features.shape, embed_cate_features.shape)
-            # print(embed_num_features.dtype, embed_cate_features.dtype)
+
             X = torch.cat([embed_num_features,
                            embed_cate_features], 2)
-            # print(X.dtype)
-
-
-
-        # embed_interaction = self.embedding_interaction(interaction)
-        # embed_test = self.embedding_test(test)
-        # embed_question = self.embedding_question(question)
-        # embed_tag = self.embedding_tag(tag)
-
-
-        # embed = torch.cat([embed_interaction,
-        #                    embed_test,
-        #                    embed_question,
-        #                    embed_tag,], 2)
-
-        # X = self.comb_proj(embed)
 
         hidden = self.init_hidden(batch_size)
         out, hidden = self.rnn(X, hidden)

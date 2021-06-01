@@ -53,9 +53,9 @@ class Preprocess:
             else:
                 label_path = os.path.join(self.args.asset_dir,col+'_classes.npy')
                 le.classes_ = np.load(label_path)
-                print(df[col])
+                # print(df[col])
                 df[col] = df[col].apply(lambda x: x if str(x) in le.classes_ else 'unknown')
-                print(df[col])
+                # print(df[col])
 
             #모든 컬럼이 범주형이라고 가정
             df[col]= df[col].astype(str)
@@ -102,8 +102,6 @@ class Preprocess:
 
         # large category (대분류)
         df['large_category'] = df['testId'].apply(lambda x:int(x[2]))
-
-        print(df.head())
         
         self.args.cate_cols.extend(['large_category'])
         return df
@@ -119,7 +117,10 @@ class Preprocess:
         df = self.__preprocessing(df, is_train)
 
         print('After feature engineering : ', self.args.cate_cols, self.args.num_cols)
+        print(df[self.args.cate_cols].head())
+        print(df[self.args.num_cols].head())
 
+        # print(df.head())
         '''
         cate_len : 추후 category feature를 embedding할 시에 (model.py) embedding_layer의 input 크기를 결정할때 사용
         dictionary에 저장
