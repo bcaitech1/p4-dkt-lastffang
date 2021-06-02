@@ -86,9 +86,9 @@ class Preprocess:
         def convert_time(s):
                 timestamp = time.mktime(datetime.strptime(s, '%Y-%m-%d %H:%M:%S').timetuple())
                 return int(timestamp)
-
+        
         df['Timestamp_int'] = df['Timestamp'].apply(convert_time)
-        df['elapsed_time'] = df.loc[:,['userID','Timestamp_int','testId']].groupby(['userID','testId']).diff().shift(-1).fillna(int(10))
+        # df['elapsed_time'] = df.loc[:,['userID','Timestamp_int','testId']].groupby(['userID','testId']).diff().shift(-1).fillna(int(10))
         
         
         df.sort_values(by=['userID','Timestamp'], inplace=True)
@@ -100,12 +100,12 @@ class Preprocess:
         df['user_total_acc'] = df['user_total_correct_cnt'] / df['user_total_ans_cnt']
         df['user_total_acc'] = df['user_total_acc'].fillna(float(0))
         
-        df['et_by_kt'] = df.groupby('KnowledgeTag')['elapsed_time'].transform(lambda x: x.quantile(q=0.5))#KT별 평균 소요 시간
-        df['et_by_as'] = df.groupby('assessmentItemID')['elapsed_time'].transform(lambda x: x.quantile(q=0.5))#문항별 평균 소요 시간
+        # df['et_by_kt'] = df.groupby('KnowledgeTag')['elapsed_time'].transform(lambda x: x.quantile(q=0.5))#KT별 평균 소요 시간
+        # df['et_by_as'] = df.groupby('assessmentItemID')['elapsed_time'].transform(lambda x: x.quantile(q=0.5))#문항별 평균 소요 시간
 
         self.args.num_cols.extend(['answer_mean', 'assessment_category_mean', 'knowledge_tag_mean', 'testId_answer_rate', \
-            'assessmentItemID_answer_rate', 'elapsed_time', 'user_total_acc', 'et_by_kt', 'et_by_as'])
-
+            'assessmentItemID_answer_rate',  'user_total_acc'])
+        # self.args.num_cols.append('assessmentItemID_answer_rate')
         return df
 
     def __feature_engineering_cate(self, df):
@@ -122,11 +122,33 @@ class Preprocess:
         self.args.cate_cols.extend(['assessment_category'])
         return df
 
-    def load_data_from_file(self, file_name, is_train=True):
-        csv_file_path = os.path.join(self.args.data_dir, file_name)
-        df = pd.read_csv(csv_file_path)#, nrows=100000)
-
+    def load_data_from_file(self, args, is_train=True):
+        if not is_train:
+            file_name = args.test_file_name
+            csv_file_path = os.path.join(self.args.data_dir, file_name)
+            df = pd.read_csv(csv_file_path)#, nrows=100000)
+        elif is_train and args.test_data_to_train:
+            file_name = args.file_name
+            csv_file_path = os.path.join(self.args.data_dir, file_name)
+            df_train = pd.read_csv(csv_file_path)#, nrows=100000)
+            print("train", len(df_train))
+            file_name = args.test_file_name
+            csv_file_path = os.path.join(self.args.data_dir, file_name)
+            df_test = pd.read_csv(csv_file_path)#, nrows=100000)
+            print("test", len(df_test))
+            df_test = df_test[df_test.answerCode != -1]
+            print("test -1제거", len(df_test))
+            df = pd.concat([df_train, df_test])
+            df.reset_index()
+            print("total", len(df))
+        else:
+            file_name = args.file_name
+            csv_file_path = os.path.join(self.args.data_dir, file_name)
+            df = pd.read_csv(csv_file_path)#, nrows=100000)
+            
         print('Before feature engineering : ', self.args.cate_cols, self.args.num_cols)
+        print(df[self.args.cate_cols].head())
+        print(df[self.args.num_cols].head())
 
         df = self.__feature_engineering_cate(df)
         df = self.__feature_engineering_num(df)
@@ -136,7 +158,6 @@ class Preprocess:
         print(df[self.args.cate_cols].head())
         print(df[self.args.num_cols].head())
 
-        # print(df.head())
         '''
         cate_len : 추후 category feature를 embedding할 시에 (model.py) embedding_layer의 input 크기를 결정할때 사용
         dictionary에 저장
@@ -152,8 +173,6 @@ class Preprocess:
         for cate_name in self.args.cate_cols:
             self.args.cate_len[cate_name] = len(np.load(os.path.join(self.args.asset_dir,f'{cate_name}_classes.npy')))
 
-        # print(self.args.cate_len)
-        # exit()
         df = df.sort_values(by=['userID','Timestamp'], axis=0)
         columns = ['userID'] + self.args.cate_cols + self.args.num_cols
 
@@ -176,11 +195,11 @@ class Preprocess:
 
         return group.values
 
-    def load_train_data(self, file_name):
-        self.train_data = self.load_data_from_file(file_name)
+    def load_train_data(self, args):
+        self.train_data = self.load_data_from_file(args)
 
-    def load_test_data(self, file_name):
-        self.test_data = self.load_data_from_file(file_name, is_train= False)
+    def load_test_data(self, args):
+        self.test_data = self.load_data_from_file(args, is_train=False)
 
 
 class DKTDataset(torch.utils.data.Dataset):

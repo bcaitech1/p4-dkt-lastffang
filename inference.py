@@ -19,7 +19,7 @@ def main(args):
     
     
     preprocess = Preprocess(args)
-    preprocess.load_test_data(args.test_file_name)
+    preprocess.load_test_data(args)
     test_data = preprocess.get_test_data()
     
 
