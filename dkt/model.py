@@ -10,6 +10,22 @@ try:
 except:
     from transformers.models.bert.modeling_bert import BertConfig, BertEncoder, BertModel
 
+def init_layers(args):
+    cate_embedding_layers, num_embedding_layers = {}, {}
+
+    for cate_col in args.cate_cols:
+        cate_embedding_layers[cate_col] = \
+            nn.Embedding(args.cate_len[cate_col] + 1, args.hidden_dim//3).to(args.device) if cate_col != 'answerCode' \
+            else nn.Embedding(args.cate_len[cate_col], args.hidden_dim//3).to(args.device)
+
+    for num_col in args.num_cols:
+        num_embedding_layers[num_col] = nn.Linear(1, args.hidden_dim//3).to(args.device)
+
+    # embedding combination projection
+    comb_proj = nn.Linear((args.hidden_dim//3)*((len(args.num_cols) + len(args.cate_cols))), args.hidden_dim)
+
+    return cate_embedding_layers, num_embedding_layers, comb_proj
+
 
 class LSTM(nn.Module):
     def __init__(self, args):
@@ -33,20 +49,20 @@ class LSTM(nn.Module):
         '''
         # Embedding
 
-        self.cate_embedding_layers = {}
-        for cate_col in self.args.cate_cols:
-            self.cate_embedding_layers[cate_col] = \
-                nn.Embedding(self.args.cate_len[cate_col] + 1, self.hidden_dim//3).to(args.device) if cate_col != 'answerCode' \
-                else nn.Embedding(self.args.cate_len[cate_col], self.hidden_dim//3).to(args.device)
+        self.cate_embedding_layers, self.num_embedding_layers, self.comb_proj = init_layers(args)
+
+        # for cate_col in self.args.cate_cols:
+        #     self.cate_embedding_layers[cate_col] = \
+        #         nn.Embedding(self.args.cate_len[cate_col] + 1, self.hidden_dim//3).to(args.device) if cate_col != 'answerCode' \
+        #         else nn.Embedding(self.args.cate_len[cate_col], self.hidden_dim//3).to(args.device)
 
 
-        self.num_embedding_layers = {}
-        for num_col in self.args.num_cols:
-            # torch.manual_seed(self.args.seed)    
-            self.num_embedding_layers[num_col] = \
-                nn.Linear(1, self.hidden_dim//3).to(args.device)
+        # self.num_embedding_layers = {}
+        # for num_col in self.args.num_cols:
+        #     self.num_embedding_layers[num_col] = \
+        #         nn.Linear(1, self.hidden_dim//3).to(args.device)
 
-        self.comb_proj = nn.Linear((self.hidden_dim//3)*((len(self.args.num_cols) + len(self.args.cate_cols))), self.hidden_dim)
+        # self.comb_proj = nn.Linear((self.hidden_dim//3)*((len(self.args.num_cols) + len(self.args.cate_cols))), self.hidden_dim)
 
         self.lstm = nn.LSTM(self.hidden_dim,
                             self.hidden_dim,
@@ -84,7 +100,6 @@ class LSTM(nn.Module):
         원래 코드
         test, question, tag, _, mask, interaction = input
         '''
-
 
         batch_size = input[1].size(0)
         cate_inputs = input[1:len(self.args.cate_cols)+1]
@@ -146,19 +161,21 @@ class RNNATTN(nn.Module):
         self.embedding_tag = nn.Embedding(self.args.n_tag + 1, self.hidden_dim//3)
         '''
 
-        self.cate_embedding_layers = {}
-        for cate_col in self.args.cate_cols:
-            self.cate_embedding_layers[cate_col] = \
-                nn.Embedding(self.args.cate_len[cate_col] + 1, self.hidden_dim//3).to(args.device) if cate_col != 'answerCode' \
-                else nn.Embedding(self.args.cate_len[cate_col], self.hidden_dim//3).to(args.device)
+        self.cate_embedding_layers, self.num_embedding_layers, self.comb_proj = init_layers(args)
+
+        # self.cate_embedding_layers = {}
+        # for cate_col in self.args.cate_cols:
+        #     self.cate_embedding_layers[cate_col] = \
+        #         nn.Embedding(self.args.cate_len[cate_col] + 1, self.hidden_dim//3).to(args.device) if cate_col != 'answerCode' \
+        #         else nn.Embedding(self.args.cate_len[cate_col], self.hidden_dim//3).to(args.device)
 
 
-        self.num_embedding_layers = {}
-        for num_col in self.args.num_cols:
-            self.num_embedding_layers[num_col] = \
-                nn.Linear(1, self.hidden_dim//3).to(args.device)
+        # self.num_embedding_layers = {}
+        # for num_col in self.args.num_cols:
+        #     self.num_embedding_layers[num_col] = \
+        #         nn.Linear(1, self.hidden_dim//3).to(args.device)
 
-        self.comb_proj = nn.Linear((self.hidden_dim//3)*((len(self.args.num_cols) + len(self.args.cate_cols))), self.hidden_dim)
+        # self.comb_proj = nn.Linear((self.hidden_dim//3)*((len(self.args.num_cols) + len(self.args.cate_cols))), self.hidden_dim)
 
         if self.args.model == "lstmattn":
             self.rnn = nn.LSTM(self.hidden_dim,
@@ -266,7 +283,6 @@ class RNNATTN(nn.Module):
 
 
 class Bert(nn.Module):
-
     def __init__(self, args):
         super(Bert, self).__init__()
         self.args = args
@@ -277,14 +293,16 @@ class Bert(nn.Module):
         self.n_layers = self.args.n_layers
 
         # Embedding
-        # interaction은 현재 correct으로 구성되어있다. correct(1, 2) + padding(0)
-        self.embedding_interaction = nn.Embedding(3, self.hidden_dim//3)
-        self.embedding_test = nn.Embedding(self.args.n_test + 1, self.hidden_dim//3)
-        self.embedding_question = nn.Embedding(self.args.n_questions + 1, self.hidden_dim//3)
-        self.embedding_tag = nn.Embedding(self.args.n_tag + 1, self.hidden_dim//3)
+        self.cate_embedding_layers, self.num_embedding_layers, self.comb_proj = init_layers(args)
 
-        # embedding combination projection
-        self.comb_proj = nn.Linear((self.hidden_dim//3)*4, self.hidden_dim)
+        # # interaction은 현재 correct으로 구성되어있다. correct(1, 2) + padding(0)
+        # self.embedding_interaction = nn.Embedding(3, self.hidden_dim//3)
+        # self.embedding_test = nn.Embedding(self.args.n_test + 1, self.hidden_dim//3)
+        # self.embedding_question = nn.Embedding(self.args.n_questions + 1, self.hidden_dim//3)
+        # self.embedding_tag = nn.Embedding(self.args.n_tag + 1, self.hidden_dim//3)
+
+        # # embedding combination projection
+        # self.comb_proj = nn.Linear((self.hidden_dim//3)*4, self.hidden_dim)
 
         # Bert config
         self.config = BertConfig(
