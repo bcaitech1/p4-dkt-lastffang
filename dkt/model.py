@@ -27,6 +27,22 @@ def init_layers(args):
     return cate_embedding_layers, num_embedding_layers, comb_proj
 
 
+def forward_layers(args, cate_inputs, num_inputs, cate_embedding_layers, num_embedding_layers):
+
+    embed_cate_features = torch.cat(
+            [cate_embedding_layers[cate_col](cate_input) for cate_input, cate_col \
+                in zip(cate_inputs, args.cate_cols)], 2)
+
+    embed_num_features = torch.cat(
+            [num_embedding_layers[num_col](num_input.unsqueeze(2)) for num_input, num_col \
+                in zip(num_inputs, args.num_cols)], 2)
+
+    embed = torch.cat([embed_cate_features,
+                       embed_num_features], 2)
+
+    return embed
+
+
 class LSTM(nn.Module):
     def __init__(self, args):
         super(LSTM, self).__init__()
@@ -116,16 +132,7 @@ class LSTM(nn.Module):
         '''
         
         # Embedding
-        embed_cate_features = torch.cat(
-                [self.cate_embedding_layers[cate_col](cate_input) for cate_input, cate_col \
-                    in zip(cate_inputs, self.args.cate_cols)], 2)
-    
-        embed_num_features = torch.cat(
-                [self.num_embedding_layers[num_col](num_input.unsqueeze(2)) for num_input, num_col \
-                    in zip(num_inputs, self.args.num_cols)], 2)
-
-        embed = torch.cat([embed_cate_features,
-                           embed_num_features], 2)
+        embed = forward_layers(self.args, cate_inputs, num_inputs, self.cate_embedding_layers, self.num_embedding_layers)
 
         X = self.comb_proj(embed)
 
@@ -250,16 +257,20 @@ class RNNATTN(nn.Module):
         embed_tag = self.embedding_tag(tag)
         '''
         
-        embed_cate_features = torch.cat(
-                [self.cate_embedding_layers[cate_col](cate_input) for cate_input, cate_col \
-                    in zip(cate_inputs, self.args.cate_cols)], 2)
-    
-        embed_num_features = torch.cat(
-                [self.num_embedding_layers[num_col](num_input.unsqueeze(2)) for num_input, num_col \
-                    in zip(num_inputs, self.args.num_cols)], 2)
+        
+        # Embedding
+        embed = forward_layers(self.args, cate_inputs, num_inputs, self.cate_embedding_layers, self.num_embedding_layers)
 
-        embed = torch.cat([embed_cate_features,
-                           embed_num_features], 2)
+        # embed_cate_features = torch.cat(
+        #         [self.cate_embedding_layers[cate_col](cate_input) for cate_input, cate_col \
+        #             in zip(cate_inputs, self.args.cate_cols)], 2)
+    
+        # embed_num_features = torch.cat(
+        #         [self.num_embedding_layers[num_col](num_input.unsqueeze(2)) for num_input, num_col \
+        #             in zip(num_inputs, self.args.num_cols)], 2)
+
+        # embed = torch.cat([embed_cate_features,
+        #                    embed_num_features], 2)
 
         X = self.comb_proj(embed)
 
@@ -324,22 +335,45 @@ class Bert(nn.Module):
 
 
     def forward(self, input):
-        test, question, tag, _, mask, interaction, _ = input
-        batch_size = interaction.size(0)
+        '''
+        input 순서는 category + numeric + mask
 
-        # 신나는 embedding
+        'answerCode', 'interaction', 'assessmentItemID', 'testId', 'KnowledgeTag', + 추가 category
+        추가 num
+        'mask'
 
+        원래 코드
+        test, question, tag, _, mask, interaction = input
+        '''
+
+        batch_size = input[1].size(0)
+        cate_inputs = input[1:len(self.args.cate_cols)+1]
+        num_inputs = input[len(self.args.cate_cols)+1:len(self.args.cate_cols)+len(self.args.num_cols)+1]
+        
+        '''
+        cate_embedding_layers에 input(data) 넣어서 feature로 output
+
+        원래 코드
         embed_interaction = self.embedding_interaction(interaction)
         embed_test = self.embedding_test(test)
         embed_question = self.embedding_question(question)
         embed_tag = self.embedding_tag(tag)
+        '''
 
-        embed = torch.cat([embed_interaction,
+        # Embedding
+        embed = forward_layers(self.args, cate_inputs, num_inputs, self.cate_embedding_layers, self.num_embedding_layers)
+    
+        # embed_interaction = self.embedding_interaction(interaction)
+        # embed_test = self.embedding_test(test)
+        # embed_question = self.embedding_question(question)
+        # embed_tag = self.embedding_tag(tag)
 
-                           embed_test,
-                           embed_question,
+        # embed = torch.cat([embed_interaction,
 
-                           embed_tag,], 2)
+        #                    embed_test,
+        #                    embed_question,
+
+        #                    embed_tag,], 2)
 
         X = self.comb_proj(embed)
 
