@@ -14,6 +14,8 @@ def parse_args(mode):
     parser.add_argument('--data_dir', default='/opt/ml/input/data/train_dataset', type=str, help='data directory')
     parser.add_argument('--asset_dir', default='asset/', type=str, help='data directory')
 
+    parser.add_argument('--test_data_to_train', default=False, action='store_true', help='use test data to train')
+
     parser.add_argument('--file_name', default='train_data.csv', type=str, help='train file name')
 
     parser.add_argument('--model_dir', default='models/', type=str, help='model directory')
