@@ -33,20 +33,20 @@ class LSTM(nn.Module):
         '''
         # Embedding
 
-        self.cate_embedding_layers = \
-            [nn.Embedding(self.args.cate_len[cate_col] + 1, self.hidden_dim//3).to(args.device) for cate_col in self.args.cate_cols]
+        self.cate_embedding_layers = {}
+        for cate_col in self.args.cate_cols:
+            self.cate_embedding_layers[cate_col] = \
+                nn.Embedding(self.args.cate_len[cate_col] + 1, self.hidden_dim//3).to(args.device) if cate_col != 'answerCode' \
+                else nn.Embedding(self.args.cate_len[cate_col], self.hidden_dim//3).to(args.device)
 
-        if len(self.args.num_cols) == 0:
-            self.num_embedding_layers = None
-            # embedding combination projection
-            self.comb_proj = nn.Linear((self.hidden_dim//3)*(len(self.cate_embedding_layers)) \
-                , self.hidden_dim)
-        else:
-            self.num_embedding_layers = nn.Linear(len(self.args.num_cols), self.hidden_dim//2)
-            # cont_emb = nn.Sequential(nn.Linear(cont_col_size, CFG.hidden_size//2),
-            #                         nn.LayerNorm(CFG.hidden_size//2))
-            self.comb_proj = nn.Linear((self.hidden_dim//3)*(len(self.cate_embedding_layers)) \
-                , self.hidden_dim//2)
+
+        self.num_embedding_layers = {}
+        for num_col in self.args.num_cols:
+            # torch.manual_seed(self.args.seed)    
+            self.num_embedding_layers[num_col] = \
+                nn.Linear(1, self.hidden_dim//3).to(args.device)
+
+        self.comb_proj = nn.Linear((self.hidden_dim//3)*((len(self.args.num_cols) + len(self.args.cate_cols))), self.hidden_dim)
 
         self.lstm = nn.LSTM(self.hidden_dim,
                             self.hidden_dim,
@@ -84,7 +84,8 @@ class LSTM(nn.Module):
         원래 코드
         test, question, tag, _, mask, interaction = input
         '''
-        
+
+
         batch_size = input[1].size(0)
         cate_inputs = input[1:len(self.args.cate_cols)+1]
         num_inputs = input[len(self.args.cate_cols)+1:len(self.args.cate_cols)+len(self.args.num_cols)+1]
@@ -98,25 +99,20 @@ class LSTM(nn.Module):
         embed_question = self.embedding_question(question)
         embed_tag = self.embedding_tag(tag)
         '''
-
+        
         # Embedding
-        if self.num_embedding_layers is None:
-            embed_cate_features = torch.cat(
-                [cate_embedding_layer(cate_input) for cate_input, cate_embedding_layer \
-                in zip(cate_inputs, self.cate_embedding_layers)], 2)
-            X = self.comb_proj(embed_cate_features)
-        else:
-            num_inputs = torch.stack(list(num_inputs), dim=0).view(batch_size, -1, len(num_inputs))
-            embed_num_features = self.num_embedding_layers(num_inputs)
+        embed_cate_features = torch.cat(
+                [self.cate_embedding_layers[cate_col](cate_input) for cate_input, cate_col \
+                    in zip(cate_inputs, self.args.cate_cols)], 2)
+    
+        embed_num_features = torch.cat(
+                [self.num_embedding_layers[num_col](num_input.unsqueeze(2)) for num_input, num_col \
+                    in zip(num_inputs, self.args.num_cols)], 2)
 
-            embed_cate_features = torch.cat(
-                [cate_embedding_layer(cate_input) for cate_input, cate_embedding_layer \
-                in zip(cate_inputs, self.cate_embedding_layers)], 2)
-            
-            embed_cate_features = self.comb_proj(embed_cate_features)
+        embed = torch.cat([embed_cate_features,
+                           embed_num_features], 2)
 
-            X = torch.cat([embed_num_features,
-                           embed_cate_features], 2)
+        X = self.comb_proj(embed)
 
         hidden = self.init_hidden(batch_size)
         out, hidden = self.lstm(X, hidden)
@@ -150,28 +146,19 @@ class RNNATTN(nn.Module):
         self.embedding_tag = nn.Embedding(self.args.n_tag + 1, self.hidden_dim//3)
         '''
 
-        # Embedding
-        self.cate_embedding_layers = [nn.Embedding(self.args.cate_len[cate_col] + 1, self.hidden_dim//3).to(args.device) \
-             for cate_col in self.args.cate_cols]
+        self.cate_embedding_layers = {}
+        for cate_col in self.args.cate_cols:
+            self.cate_embedding_layers[cate_col] = \
+                nn.Embedding(self.args.cate_len[cate_col] + 1, self.hidden_dim//3).to(args.device) if cate_col != 'answerCode' \
+                else nn.Embedding(self.args.cate_len[cate_col], self.hidden_dim//3).to(args.device)
 
-        self.num_embedding_layers = [nn.Linear(1, self.hidden_dim//3).to(args.device) for _ in self.args.num_cols]
 
-        self.comb_proj = nn.Sequential(
-            nn.Linear((self.hidden_dim//3)*((len(self.args.num_cols) + len(self.args.cate_cols))), self.hidden_dim),
-            nn.Dropout(self.args.drop_out))
+        self.num_embedding_layers = {}
+        for num_col in self.args.num_cols:
+            self.num_embedding_layers[num_col] = \
+                nn.Linear(1, self.hidden_dim//3).to(args.device)
 
-        # if len(self.args.num_cols) == 0:
-        #     self.num_embedding_layers = None
-        #     # embedding combination projection
-        #     self.comb_proj = nn.Linear((self.hidden_dim//3)*(len(self.cate_embedding_layers)) \
-        #         , self.hidden_dim)
-        # else:
-        #     self.num_embedding_layers = nn.Linear(len(self.args.num_cols), self.hidden_dim//2)
-        #     # cont_emb = nn.Sequential(nn.Linear(cont_col_size, CFG.hidden_size//2),
-        #     #                         nn.LayerNorm(CFG.hidden_size//2))
-        #     self.comb_proj = nn.Linear((self.hidden_dim//3)*(len(self.cate_embedding_layers)) \
-        #         , self.hidden_dim//2)
-
+        self.comb_proj = nn.Linear((self.hidden_dim//3)*((len(self.args.num_cols) + len(self.args.cate_cols))), self.hidden_dim)
 
         if self.args.model == "lstmattn":
             self.rnn = nn.LSTM(self.hidden_dim,
@@ -235,8 +222,7 @@ class RNNATTN(nn.Module):
         cate_inputs = input[1:len(self.args.cate_cols)+1]
         num_inputs = input[len(self.args.cate_cols)+1:len(self.args.cate_cols)+len(self.args.num_cols)+1]
         mask = input[-1]
-
-        # Embedding
+        
         '''
         cate_embedding_layers에 input(data) 넣어서 feature로 output
 
@@ -246,43 +232,19 @@ class RNNATTN(nn.Module):
         embed_question = self.embedding_question(question)
         embed_tag = self.embedding_tag(tag)
         '''
-
-
+        
         embed_cate_features = torch.cat(
-                [cate_embedding_layer(cate_input) for cate_input, cate_embedding_layer \
-                in zip(cate_inputs, self.cate_embedding_layers)], 2)
-
+                [self.cate_embedding_layers[cate_col](cate_input) for cate_input, cate_col \
+                    in zip(cate_inputs, self.args.cate_cols)], 2)
+    
         embed_num_features = torch.cat(
-                [num_embedding_layer(num_input.unsqueeze(2)) for num_input, num_embedding_layer \
-                in zip(num_inputs, self.num_embedding_layers)], 2)
+                [self.num_embedding_layers[num_col](num_input.unsqueeze(2)) for num_input, num_col \
+                    in zip(num_inputs, self.args.num_cols)], 2)
 
         embed = torch.cat([embed_cate_features,
                            embed_num_features], 2)
 
         X = self.comb_proj(embed)
-
-        # X = torch.cat([embed_num_features,
-        #                 embed_cate_features], 2)
-
-
-        # Embedding
-        # if self.num_embedding_layers is None:
-        #     embed_cate_features = torch.cat(
-        #         [cate_embedding_layer(cate_input) for cate_input, cate_embedding_layer \
-        #         in zip(cate_inputs, self.cate_embedding_layers)], 2)
-        #     X = self.comb_proj(embed_cate_features)
-        # else:
-        #     num_inputs = torch.stack(list(num_inputs), dim=0).view(batch_size, -1, len(num_inputs))
-        #     embed_num_features = self.num_embedding_layers(num_inputs)
-
-        #     embed_cate_features = torch.cat(
-        #         [cate_embedding_layer(cate_input) for cate_input, cate_embedding_layer \
-        #         in zip(cate_inputs, self.cate_embedding_layers)], 2)
-
-        #     embed_cate_features = self.comb_proj(embed_cate_features)
-
-        #     X = torch.cat([embed_num_features,
-        #                    embed_cate_features], 2)
 
         hidden = self.init_hidden(batch_size)
         out, hidden = self.rnn(X, hidden)

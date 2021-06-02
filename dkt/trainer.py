@@ -209,7 +209,6 @@ def process_batch(batch, args):
     원래코드
     # test, question, tag, correct, mask = batch
     '''
-
     cate_features = batch[:len(args.cate_cols)]
     num_features = batch[len(args.cate_cols):len(args.cate_cols)+len(args.num_cols)]
     mask = batch[-1]
@@ -250,7 +249,7 @@ def process_batch(batch, args):
             # question, test, tag
             features.append(((cate_feature + 1) * mask).to(torch.int64))
 
-    [features.append((num_feature * mask).type(torch.FloatTensor)) for num_feature in num_features]
+    [features.append((num_feature * mask).to(torch.double).type(torch.FloatTensor)) for num_feature in num_features]
 
     # gather index
     # 마지막 sequence만 사용하기 위한 index

@@ -53,9 +53,7 @@ class Preprocess:
             else:
                 label_path = os.path.join(self.args.asset_dir,col+'_classes.npy')
                 le.classes_ = np.load(label_path)
-                # print(df[col])
                 df[col] = df[col].apply(lambda x: x if str(x) in le.classes_ else 'unknown')
-                # print(df[col])
 
             #모든 컬럼이 범주형이라고 가정
             df[col]= df[col].astype(str)
@@ -80,15 +78,33 @@ class Preprocess:
         '''
 
         df['answer_mean'] = df.groupby('userID')['answerCode'].transform('mean') # 사용자별 정답률
-        df['assessment_category_mean'] = df.groupby('large_category')['answerCode'].transform('mean') # 대분류의 정답률
+        df['assessment_category_mean'] = df.groupby('assessment_category')['answerCode'].transform('mean') # 대분류의 정답률
         df['knowledge_tag_mean'] = df.groupby('KnowledgeTag')['answerCode'].transform('mean') # 지식 태그 분류별 정답률
-        #df['solved_count'] = df.groupby('userID')['assessmentItemID'].transform('count') # 학생별 푼 문제수
         df['testId_answer_rate'] = df.groupby('testId')['answerCode'].transform('mean') #시험지 별로 정답률
         df['assessmentItemID_answer_rate'] = df.groupby('assessmentItemID')['answerCode'].transform('mean') #문항별 정답률
 
-        self.args.num_cols.extend(['answer_mean', 'assessment_category_mean', \
-            'knowledge_tag_mean', 'testId_answer_rate', 'assessmentItemID_answer_rate'])
-        # self.args.num_cols.append()
+        def convert_time(s):
+                timestamp = time.mktime(datetime.strptime(s, '%Y-%m-%d %H:%M:%S').timetuple())
+                return int(timestamp)
+
+        df['Timestamp_int'] = df['Timestamp'].apply(convert_time)
+        df['elapsed_time'] = df.loc[:,['userID','Timestamp_int','testId']].groupby(['userID','testId']).diff().shift(-1).fillna(int(10))
+        
+        
+        df.sort_values(by=['userID','Timestamp'], inplace=True)
+
+      # 유저가 푼 시험지에 대해, 유저의 전체 정답/풀이횟수/정답률 계산 (3번 풀었으면 3배)
+        df_group = df.groupby(['userID','testId'])['answerCode']
+        df['user_total_correct_cnt'] = df_group.transform(lambda x: x.cumsum().shift(1))
+        df['user_total_ans_cnt'] = df_group.cumcount()
+        df['user_total_acc'] = df['user_total_correct_cnt'] / df['user_total_ans_cnt']
+        df['user_total_acc'] = df['user_total_acc'].fillna(float(0))
+        
+        df['et_by_kt'] = df.groupby('KnowledgeTag')['elapsed_time'].transform(lambda x: x.quantile(q=0.5))#KT별 평균 소요 시간
+        df['et_by_as'] = df.groupby('assessmentItemID')['elapsed_time'].transform(lambda x: x.quantile(q=0.5))#문항별 평균 소요 시간
+
+        self.args.num_cols.extend(['answer_mean', 'assessment_category_mean', 'knowledge_tag_mean', 'testId_answer_rate', \
+            'assessmentItemID_answer_rate', 'elapsed_time', 'user_total_acc', 'et_by_kt', 'et_by_as'])
 
         return df
 
@@ -101,9 +117,9 @@ class Preprocess:
         '''
 
         # large category (대분류)
-        df['large_category'] = df['testId'].apply(lambda x:int(x[2]))
+        df['assessment_category'] = df.apply(lambda row: row.assessmentItemID[2], axis = 1)#TODO # 대분류
         
-        self.args.cate_cols.extend(['large_category'])
+        self.args.cate_cols.extend(['assessment_category'])
         return df
 
     def load_data_from_file(self, file_name, is_train=True):
@@ -136,6 +152,8 @@ class Preprocess:
         for cate_name in self.args.cate_cols:
             self.args.cate_len[cate_name] = len(np.load(os.path.join(self.args.asset_dir,f'{cate_name}_classes.npy')))
 
+        # print(self.args.cate_len)
+        # exit()
         df = df.sort_values(by=['userID','Timestamp'], axis=0)
         columns = ['userID'] + self.args.cate_cols + self.args.num_cols
 
@@ -226,7 +244,7 @@ def collate(batch):
 
     for i, _ in enumerate(col_list):
         col_list[i] =torch.stack(col_list[i])
-    
+
     return tuple(col_list)
 
 

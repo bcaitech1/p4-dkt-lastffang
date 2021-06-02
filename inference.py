@@ -14,7 +14,7 @@ def main(args):
     기본 baseline의 features
     preprocess에서 feature engineering을 거치면 뒤에 더 추가됨
     '''
-    args.cate_cols = ['answerCode', 'assessmentItemID', 'testId', 'KnowledgeTag']
+    args.cate_cols = ['answerCode', 'testId', 'assessmentItemID', 'KnowledgeTag']
     args.num_cols = []
     
     
