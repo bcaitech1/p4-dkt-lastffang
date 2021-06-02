@@ -3,10 +3,20 @@ from args import parse_args
 from dkt.dataloader import Preprocess
 from dkt import trainer
 import torch
+from dkt.utils import setSeeds
+
 def main(args):
+    setSeeds(42)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     args.device = device
 
+    '''
+    기본 baseline의 features
+    preprocess에서 feature engineering을 거치면 뒤에 더 추가됨
+    '''
+    args.cate_cols = ['answerCode', 'testId', 'assessmentItemID', 'KnowledgeTag']
+    args.num_cols = []
+    
     
     preprocess = Preprocess(args)
     preprocess.load_test_data(args.test_file_name)

@@ -16,11 +16,18 @@ def main(args):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     args.device = device
 
+    '''
+    기본 baseline의 features
+    preprocess에서 feature engineering을 거치면 뒤에 더 추가됨
+    '''
+    args.cate_cols = ['answerCode', 'testId', 'assessmentItemID', 'KnowledgeTag']
+    args.num_cols = []
+
     preprocess = Preprocess(args)
     preprocess.load_train_data(args.file_name)
     train_data = preprocess.get_train_data()
 
-    train_data, valid_data = preprocess.split_data(train_data)
+    train_data, valid_data = preprocess.split_data(train_data, shuffle=True)
 
     if not args.run_name:
         args.run_name = datetime.now(timezone("Asia/Seoul")).strftime("%Y-%m-%d-%H:%M:%S")
