@@ -323,20 +323,7 @@ class LastQuery(nn.Module):
         # 하지만 사용 여부는 자유롭게 결정해주세요 :)
         # self.embedding_position = nn.Embedding(self.args.max_seq_len, self.hidden_dim)
         '''
-
-        self.cate_embedding_layers = {}
-        for cate_col in self.args.cate_cols:
-            self.cate_embedding_layers[cate_col] = \
-                nn.Embedding(self.args.cate_len[cate_col] + 1, self.hidden_dim//3).to(args.device) if cate_col != 'answerCode' \
-                else nn.Embedding(self.args.cate_len[cate_col], self.hidden_dim//3).to(args.device)
-
-
-        self.num_embedding_layers = {}
-        for num_col in self.args.num_cols:
-            self.num_embedding_layers[num_col] = \
-                nn.Linear(1, self.hidden_dim//3).to(args.device)
-
-        self.comb_proj = nn.Linear((self.hidden_dim//3)*((len(self.args.num_cols) + len(self.args.cate_cols))), self.hidden_dim)
+        self.cate_embedding_layers, self.cont_embedding_layers, self.comb_proj = init_layers(args)
 
         # Encoder
         self.query = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)
@@ -389,8 +376,6 @@ class LastQuery(nn.Module):
         seq_len = interaction.size(1)
         '''
         batch_size = input[1].size(0)
-        cate_inputs = input[1:len(self.args.cate_cols)+1]
-        num_inputs = input[len(self.args.cate_cols)+1:len(self.args.cate_cols)+len(self.args.num_cols)+1]
         mask = input[-1]
 
         '''
@@ -406,17 +391,7 @@ class LastQuery(nn.Module):
                            embed_tag,], 2)
         '''
 
-        embed_cate_features = torch.cat(
-                [self.cate_embedding_layers[cate_col](cate_input) for cate_input, cate_col \
-                    in zip(cate_inputs, self.args.cate_cols)], 2)
-
-        embed_num_features = torch.cat(
-                [self.num_embedding_layers[num_col](num_input.unsqueeze(2)) for num_input, num_col \
-                    in zip(num_inputs, self.args.num_cols)], 2)
-
-        embed = torch.cat([embed_cate_features,
-                           embed_num_features], 2)
-
+        embed = forward_layers(self.args, input, self.cate_embedding_layers, self.cont_embedding_layers)
         embed = self.comb_proj(embed)
 
         # Positional Embedding
