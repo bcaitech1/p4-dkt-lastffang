@@ -72,20 +72,16 @@ class Preprocess:
 
 
 
+
     # 원하는 continuous feature 추가
     def __add_continuous_features(self, df):
 
-
-        # 예로 아래와 같이 추가 해볼 수 있다.
-        '''
-
-        1개 피처 추가 하는 방법
+'''
+        예로 아래와 같이 추가 해볼 수 있다.
+        #1개 피처 추가 하는 방법
         df['answer_mean_max'] = df.groupby(['userID'])['answer_mean'].agg('max')
         df['answer_mean_max'] = df['answer_mean_max'].fillna(float(1))
-
-
-        '''
-
+'''
         return df
 
     # inference 시 사용하게 되는 확정된 features
@@ -123,7 +119,7 @@ class Preprocess:
 
     # 원하는 categorical feature 추가
     def __add_category_features(self, df):
-
+      # 여기다가 추가 해보아요!
 
         return df
 
@@ -137,7 +133,8 @@ class Preprocess:
         csv_file_path_to_load = os.path.join(self.args.data_dir, file_name)
         df = pd.read_csv(csv_file_path_to_load)
 
-        print('Before feature engineering : ', self.args.cate_cols, self.args.num_cols)
+        print('Before feature engineering : ', self.args.cate_cols, self.args.cont_cols)
+
 
         if is_train and self.args.do_train_feature_engineering:
             df = self.__add_category_features(df)
@@ -150,7 +147,6 @@ class Preprocess:
             df = self.__add_confirmed_category_features(df)
             df = self.__add_confirmed_continuous_features(df)
 
-
         # 사용하고자 하는 features를 아래에 작성하면 됨 #
         self.args.num_cols.extend(
             ['answer_mean', 'assessment_category_mean', 'knowledge_tag_mean', 'testId_answer_rate',
@@ -159,9 +155,9 @@ class Preprocess:
 
         df = self.__preprocessing(df, is_train)
 
-        print('After feature engineering : ', self.args.cate_cols, self.args.num_cols)
+        print('After feature engineering : ', self.args.cate_cols, self.args.cont_cols)
         print(df[self.args.cate_cols].head())
-        print(df[self.args.num_cols].head())
+        print(df[self.args.cont_cols].head())
 
         # print(df.head())
         '''
@@ -181,6 +177,7 @@ class Preprocess:
 
         # print(self.args.cate_len)
         # exit()
+        
         df = df.sort_values(by=['userID', 'Timestamp'], axis=0)
         columns = ['userID'] + self.args.cate_cols + self.args.num_cols
 
