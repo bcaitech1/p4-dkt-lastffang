@@ -25,15 +25,25 @@ def main(args):
 
     preprocess = Preprocess(args)
     preprocess.load_train_data(args.file_name)
-    train_data = preprocess.get_train_data()
-
-    train_data, valid_data = preprocess.split_data(train_data, shuffle=True)
+    train_data_origin = preprocess.get_train_data()
 
     if not args.run_name:
         args.run_name = datetime.now(timezone("Asia/Seoul")).strftime("%Y-%m-%d-%H:%M:%S")
+    wandb.init(project='lastFown', entity='gonipark', name='-'.join([args.prefix, args.run_name]), config=vars(args))
 
-    wandb.init(project='p-stage-4', entity='lastffang', name='-'.join([args.prefix, args.run_name]), config=vars(args))
-    trainer.run(args, train_data, valid_data)
+    k = args.kfold_num
+    interval = len(train_data_origin) // k
+    start=0
+    cv_count=1
+    if args.do_CV:
+        for i in range(k):
+            train_data, valid_data = preprocess.split_data(train_data_origin, start, interval, shuffle=True)
+            trainer.run(args, train_data, valid_data,cv_count)
+            start += interval
+            cv_count+=1
+    else:
+        train_data, valid_data = preprocess.split_data(train_data_origin, start, interval, shuffle=True)
+        trainer.run(args, train_data, valid_data)
 
 
 if __name__ == "__main__":

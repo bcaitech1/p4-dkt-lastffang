@@ -21,7 +21,7 @@ class Preprocess:
     def get_test_data(self):
         return self.test_data
 
-    def split_data(self, data, ratio=0.7, shuffle=True, seed=0):
+    def split_data(self, data, start, interval, shuffle=True, seed=0,):
         """
         split data into two parts with a given ratio.
         """
@@ -29,11 +29,11 @@ class Preprocess:
             random.seed(seed) # fix to default seed 0
             random.shuffle(data)
 
-        size = int(len(data) * ratio)
-        data_1 = data[:size]
-        data_2 = data[size:]
+        data_1 = np.append(data[:start],data[start+interval:])
+        data_2 = data[start:start+interval]
 
         return data_1, data_2
+
 
     def __save_labels(self, encoder, name):
         le_path = os.path.join(self.args.asset_dir, name + '_classes.npy')
@@ -89,8 +89,8 @@ class Preprocess:
 
         df['Timestamp_int'] = df['Timestamp'].apply(convert_time)
         df['elapsed_time'] = df.loc[:,['userID','Timestamp_int','testId']].groupby(['userID','testId']).diff().shift(-1).fillna(int(10))
-        
-        
+
+
         df.sort_values(by=['userID','Timestamp'], inplace=True)
 
       # 유저가 푼 시험지에 대해, 유저의 전체 정답/풀이횟수/정답률 계산 (3번 풀었으면 3배)
@@ -99,7 +99,7 @@ class Preprocess:
         df['user_total_ans_cnt'] = df_group.cumcount()
         df['user_total_acc'] = df['user_total_correct_cnt'] / df['user_total_ans_cnt']
         df['user_total_acc'] = df['user_total_acc'].fillna(float(0))
-        
+
         df['et_by_kt'] = df.groupby('KnowledgeTag')['elapsed_time'].transform(lambda x: x.quantile(q=0.5))#KT별 평균 소요 시간
         df['et_by_as'] = df.groupby('assessmentItemID')['elapsed_time'].transform(lambda x: x.quantile(q=0.5))#문항별 평균 소요 시간
 

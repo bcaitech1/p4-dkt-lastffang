@@ -11,7 +11,7 @@ from .model import LSTM, RNNATTN, Bert
 
 import wandb
 
-def run(args, train_data, valid_data):
+def run(args, train_data, valid_data, cv_count):
     train_loader, valid_loader = get_loaders(args, train_data, valid_data)
     
     # only when using warmup scheduler
@@ -27,6 +27,8 @@ def run(args, train_data, valid_data):
     for epoch in range(args.n_epochs):
 
         print(f"Start Training: Epoch {epoch + 1}")
+
+        model_name='model'+str(cv_count)+'.pt'
 
         ### TRAIN
         train_auc, train_acc, train_loss = train(train_loader, model, optimizer, args)
@@ -45,7 +47,7 @@ def run(args, train_data, valid_data):
                 'epoch': epoch + 1,
                 'state_dict': model_to_save.state_dict(),
                 },
-                args.model_dir, 'model.pt',
+                args.model_dir, model_name,
             )
             early_stopping_counter = 0
         else:
@@ -155,33 +157,52 @@ def validate(valid_loader, model, args):
 
 
 def inference(args, test_data):
-    model = load_model(args)
-    model.eval()
-    _, test_loader = get_loaders(args, None, test_data)
 
-    total_preds = []
+    every_fold_preds=[0 for _ in range(744)]
+    for cv_num in range(1,args.kfold_num+1):
+        model = load_model(args, cv_num)
+        model.eval()
+        _, test_loader = get_loaders(args, None, test_data)
 
-    for step, batch in enumerate(test_loader):
-        input = process_batch(batch, args)
-        preds = model(input)
-        # predictions
-        preds = preds[:,-1]
-        
-        if args.device == 'cuda':
-            preds = preds.to('cpu').detach().numpy()
-        else: # cpu
-            preds = preds.detach().numpy()
+        total_preds = []
 
-        total_preds+=list(preds)
+        for step, batch in enumerate(test_loader):
+            input = process_batch(batch, args)
+            preds = model(input)
+            # predictions
+            preds = preds[:,-1]
 
-    write_path = os.path.join(args.output_dir, "output.csv")
-    if not os.path.exists(args.output_dir):
-        os.makedirs(args.output_dir)
-    with open(write_path, 'w', encoding='utf8') as w:
-        print("writing prediction : {}".format(write_path))
-        w.write("id,prediction\n")
-        for id, p in enumerate(total_preds):
-            w.write('{},{}\n'.format(id,p))
+            if args.device == 'cuda':
+                preds = preds.to('cpu').detach().numpy()
+            else: # cpu
+                preds = preds.detach().numpy()
+
+            total_preds+=list(preds)
+
+        every_fold_preds=[x+y for x,y in zip(every_fold_preds,total_preds)]
+
+        file_name='output'+str(cv_num)+'.csv'
+        write_path = os.path.join(args.output_dir, file_name)
+        if not os.path.exists(args.output_dir):
+            os.makedirs(args.output_dir)
+        with open(write_path, 'w', encoding='utf8') as w:
+            print("writing prediction : {}".format(write_path))
+            w.write("id,prediction\n")
+            for id, p in enumerate(total_preds):
+                w.write('{},{}\n'.format(id,p))
+
+        if cv_num==args.kfold_num:
+            every_fold_preds=[i/cv_num for i in every_fold_preds]
+
+            file_name = 'output_final.csv'
+            write_path = os.path.join(args.output_dir, file_name)
+            if not os.path.exists(args.output_dir):
+                os.makedirs(args.output_dir)
+            with open(write_path, 'w', encoding='utf8') as w:
+                print("writing prediction : {}".format(write_path))
+                w.write("id,prediction\n")
+                for id, p in enumerate(every_fold_preds):
+                    w.write('{},{}\n'.format(id, p))
 
 
 def get_model(args):
@@ -306,8 +327,9 @@ def save_checkpoint(state, model_dir, model_filename):
 
 
 
-def load_model(args):
-    model_path = os.path.join(args.model_dir, args.model_name)
+def load_model(args, cv_num):
+    model_name='model'+str(cv_num)+'.pt'
+    model_path = os.path.join(args.model_dir, model_name)
     print("Loading Model from:", model_path)
     load_state = torch.load(model_path)
     model = get_model(args)
