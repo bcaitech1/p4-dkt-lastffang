@@ -16,7 +16,8 @@ def main(args):
     '''
     args.cate_cols = ['answerCode', 'testId', 'assessmentItemID', 'KnowledgeTag']
     args.num_cols = []
-    
+    # args.kfold_num = 5
+    # args.do_CV = True
     
     preprocess = Preprocess(args)
     preprocess.load_test_data(args.test_file_name)

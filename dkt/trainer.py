@@ -61,6 +61,8 @@ def run(args, train_data, valid_data, cv_count):
             scheduler.step(best_auc)
         else:
             scheduler.step()
+        
+    return model_to_save
 
 
 def train(train_loader, model, optimizer, args):
@@ -156,53 +158,82 @@ def validate(valid_loader, model, args):
     return auc, acc, total_preds, total_targets
 
 
-def inference(args, test_data):
+def inference(args, test_data, model, cv_num):
+    # model = load_model(args, cv_num)
+    model.eval()
+    _, test_loader = get_loaders(args, None, test_data)
 
-    every_fold_preds=[0 for _ in range(744)]
-    for cv_num in range(1,args.kfold_num+1):
-        model = load_model(args, cv_num)
-        model.eval()
-        _, test_loader = get_loaders(args, None, test_data)
+    total_preds = []
 
-        total_preds = []
+    for step, batch in enumerate(test_loader):
+        input = process_batch(batch, args)
+        preds = model(input)
+        # predictions
+        preds = preds[:,-1]
+        
+        if args.device == 'cuda':
+            preds = preds.to('cpu').detach().numpy()
+        else: # cpu
+            preds = preds.detach().numpy()
 
-        for step, batch in enumerate(test_loader):
-            input = process_batch(batch, args)
-            preds = model(input)
-            # predictions
-            preds = preds[:,-1]
+        total_preds+=list(preds)
 
-            if args.device == 'cuda':
-                preds = preds.to('cpu').detach().numpy()
-            else: # cpu
-                preds = preds.detach().numpy()
+    file_name='output'+str(cv_num)+'.csv'
+    write_path = os.path.join(args.output_dir, file_name)
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
+    with open(write_path, 'w', encoding='utf8') as w:
+        print("writing prediction : {}".format(write_path))
+        w.write("id,prediction\n")
+        for id, p in enumerate(total_preds):
+            w.write('{},{}\n'.format(id,p))
 
-            total_preds+=list(preds)
+    return total_preds
+    # every_fold_preds=[0 for _ in range(744)]
+    # for cv_num in range(1,args.kfold_num+1):
+    #     model = load_model(args, cv_num)
+    #     model.eval()
+    #     _, test_loader = get_loaders(args, None, test_data)
 
-        every_fold_preds=[x+y for x,y in zip(every_fold_preds,total_preds)]
+    #     total_preds = []
 
-        file_name='output'+str(cv_num)+'.csv'
-        write_path = os.path.join(args.output_dir, file_name)
-        if not os.path.exists(args.output_dir):
-            os.makedirs(args.output_dir)
-        with open(write_path, 'w', encoding='utf8') as w:
-            print("writing prediction : {}".format(write_path))
-            w.write("id,prediction\n")
-            for id, p in enumerate(total_preds):
-                w.write('{},{}\n'.format(id,p))
+    #     for step, batch in enumerate(test_loader):
+    #         input = process_batch(batch, args)
+    #         preds = model(input)
+    #         # predictions
+    #         preds = preds[:,-1]
 
-        if cv_num==args.kfold_num:
-            every_fold_preds=[i/cv_num for i in every_fold_preds]
+    #         if args.device == 'cuda':
+    #             preds = preds.to('cpu').detach().numpy()
+    #         else: # cpu
+    #             preds = preds.detach().numpy()
 
-            file_name = 'output_final.csv'
-            write_path = os.path.join(args.output_dir, file_name)
-            if not os.path.exists(args.output_dir):
-                os.makedirs(args.output_dir)
-            with open(write_path, 'w', encoding='utf8') as w:
-                print("writing prediction : {}".format(write_path))
-                w.write("id,prediction\n")
-                for id, p in enumerate(every_fold_preds):
-                    w.write('{},{}\n'.format(id, p))
+    #         total_preds+=list(preds)
+
+    #     every_fold_preds=[x+y for x,y in zip(every_fold_preds,total_preds)]
+
+    #     file_name='output'+str(cv_num)+'.csv'
+    #     write_path = os.path.join(args.output_dir, file_name)
+    #     if not os.path.exists(args.output_dir):
+    #         os.makedirs(args.output_dir)
+    #     with open(write_path, 'w', encoding='utf8') as w:
+    #         print("writing prediction : {}".format(write_path))
+    #         w.write("id,prediction\n")
+    #         for id, p in enumerate(total_preds):
+    #             w.write('{},{}\n'.format(id,p))
+
+    #     if cv_num==args.kfold_num:
+    #         every_fold_preds=[i/cv_num for i in every_fold_preds]
+
+    #         file_name = 'output_final.csv'
+    #         write_path = os.path.join(args.output_dir, file_name)
+    #         if not os.path.exists(args.output_dir):
+    #             os.makedirs(args.output_dir)
+    #         with open(write_path, 'w', encoding='utf8') as w:
+    #             print("writing prediction : {}".format(write_path))
+    #             w.write("id,prediction\n")
+    #             for id, p in enumerate(every_fold_preds):
+    #                 w.write('{},{}\n'.format(id, p))
 
 
 def get_model(args):

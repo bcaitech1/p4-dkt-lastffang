@@ -105,9 +105,12 @@ class LSTM(nn.Module):
                 [self.cate_embedding_layers[cate_col](cate_input) for cate_input, cate_col \
                     in zip(cate_inputs, self.args.cate_cols)], 2)
     
-        embed_num_features = torch.cat(
-                [self.num_embedding_layers[num_col](num_input.unsqueeze(2)) for num_input, num_col \
-                    in zip(num_inputs, self.args.num_cols)], 2)
+        if len(self.args.num_cols) != 0:
+            embed_num_features = torch.cat(
+                    [self.num_embedding_layers[num_col](num_input.unsqueeze(2)) for num_input, num_col \
+                        in zip(num_inputs, self.args.num_cols)], 2)
+        else:
+            embed_num_features = torch.tensor([]).to(self.args.device)
 
         embed = torch.cat([embed_cate_features,
                            embed_num_features], 2)
