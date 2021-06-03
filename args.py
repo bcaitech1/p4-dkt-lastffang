@@ -5,6 +5,16 @@ import json
 with open('arg_choices.json') as f:
     choices = json.load(f)
 
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
 def parse_args(mode):
     parser = argparse.ArgumentParser()
     parser.add_argument('--seed', default=42, type=int, help='seed')
@@ -14,7 +24,10 @@ def parse_args(mode):
     parser.add_argument('--data_dir', default='/opt/ml/input/data/train_dataset', type=str, help='data directory')
     parser.add_argument('--asset_dir', default='asset/', type=str, help='data directory')
 
-    parser.add_argument('--file_name', default='train_data.csv', type=str, help='train file name')
+    parser.add_argument('--train_file_to_load', default='train_data.csv', type=str, help='train file name')
+    parser.add_argument('--do_train_feature_engineering', default='True', type=str2bool, help='whether do feature engineering or not')
+    parser.add_argument('--train_file_to_write', default='train_data_new1.csv', type=str, help='train file name')
+
 
     parser.add_argument('--model_dir', default='models/', type=str, help='model directory')
     parser.add_argument('--model_name', default='model.pt', type=str, help='model file name')
@@ -44,7 +57,7 @@ def parse_args(mode):
     parser.add_argument('--plateau_factor', default=0.5, type=float, help='factor of plateau scheduler')
 
     # 훈련
-    parser.add_argument('--n_epochs', default=20, type=int, help='number of epochs')
+    parser.add_argument('--n_epochs', default=10, type=int, help='number of epochs')
     parser.add_argument('--batch_size', default=64, type=int, help='batch size')
     parser.add_argument('--lr', default=0.0001, type=float, help='learning rate')
     parser.add_argument('--clip_grad', default=10, type=int, help='clip grad')

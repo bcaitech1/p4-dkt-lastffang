@@ -150,3 +150,5 @@ models/
 # Data dir
 asset/
 
+test.py
+test.py
