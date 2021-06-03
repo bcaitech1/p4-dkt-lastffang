@@ -69,12 +69,12 @@ class Preprocess:
         
         return df
 
-    def __feature_engineering_num(self, df):
+    def __feature_engineering_cont(self, df):
         '''        
         연속형 데이터를 데이터에 추가
 
         1. df에서 추가하시고
-        2. self.args.num_cols에 feature 이름 추가해주시면 됩니다
+        2. self.args.cont_cols에 feature 이름 추가해주시면 됩니다
         '''
 
         df['answer_mean'] = df.groupby('userID')['answerCode'].transform('mean') # 사용자별 정답률
@@ -103,7 +103,7 @@ class Preprocess:
         df['et_by_kt'] = df.groupby('KnowledgeTag')['elapsed_time'].transform(lambda x: x.quantile(q=0.5))#KT별 평균 소요 시간
         df['et_by_as'] = df.groupby('assessmentItemID')['elapsed_time'].transform(lambda x: x.quantile(q=0.5))#문항별 평균 소요 시간
 
-        self.args.num_cols.extend(['answer_mean', 'assessment_category_mean', 'knowledge_tag_mean', 'testId_answer_rate', \
+        self.args.cont_cols.extend(['answer_mean', 'assessment_category_mean', 'knowledge_tag_mean', 'testId_answer_rate', \
             'assessmentItemID_answer_rate', 'elapsed_time', 'user_total_acc', 'et_by_kt', 'et_by_as'])
 
         return df
@@ -126,15 +126,15 @@ class Preprocess:
         csv_file_path = os.path.join(self.args.data_dir, file_name)
         df = pd.read_csv(csv_file_path)#, nrows=100000)
 
-        print('Before feature engineering : ', self.args.cate_cols, self.args.num_cols)
+        print('Before feature engineering : ', self.args.cate_cols, self.args.cont_cols)
 
         df = self.__feature_engineering_cate(df)
-        df = self.__feature_engineering_num(df)
+        df = self.__feature_engineering_cont(df)
         df = self.__preprocessing(df, is_train)
 
-        print('After feature engineering : ', self.args.cate_cols, self.args.num_cols)
+        print('After feature engineering : ', self.args.cate_cols, self.args.cont_cols)
         print(df[self.args.cate_cols].head())
-        print(df[self.args.num_cols].head())
+        print(df[self.args.cont_cols].head())
 
         # print(df.head())
         '''
@@ -155,7 +155,7 @@ class Preprocess:
         # print(self.args.cate_len)
         # exit()
         df = df.sort_values(by=['userID','Timestamp'], axis=0)
-        columns = ['userID'] + self.args.cate_cols + self.args.num_cols
+        columns = ['userID'] + self.args.cate_cols + self.args.cont_cols
 
         '''
         df에서 카테고리 데이터를 label encoding한 내용으로 변환
@@ -172,7 +172,7 @@ class Preprocess:
             )
         '''
         group = df[columns].groupby('userID').apply(
-            lambda x : tuple([x[col].values for col in self.args.cate_cols + self.args.num_cols]))
+            lambda x : tuple([x[col].values for col in self.args.cate_cols + self.args.cont_cols]))
 
         return group.values
 
