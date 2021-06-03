@@ -87,9 +87,9 @@ class Preprocess:
                 timestamp = time.mktime(datetime.strptime(s, '%Y-%m-%d %H:%M:%S').timetuple())
                 return int(timestamp)
 
-        # df['Timestamp_int'] = df['Timestamp'].apply(convert_time)
-        # df['elapsed_time'] = df.loc[:,['userID','Timestamp_int','testId']].groupby(['userID','testId']).diff().shift(-1).fillna(int(10))
-        df['elapsed_time'] = df['elapsed']
+        df['Timestamp_int'] = df['Timestamp'].apply(convert_time)
+        df['elapsed_time'] = df.loc[:,['userID','Timestamp_int','testId']].groupby(['userID','testId']).diff().shift(-1).fillna(int(10))
+        # df['elapsed_time'] = df['elapsed']
 
         df.sort_values(by=['userID','Timestamp'], inplace=True)
 
