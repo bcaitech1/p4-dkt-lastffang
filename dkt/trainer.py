@@ -12,6 +12,7 @@ from .model import LSTM, RNNATTN, Bert
 import wandb
 
 def run(args, train_data, valid_data):
+    
     train_loader, valid_loader = get_loaders(args, train_data, valid_data)
     
     # only when using warmup scheduler
@@ -70,10 +71,10 @@ def train(train_loader, model, optimizer, args):
     for step, batch in enumerate(train_loader):
         input = process_batch(batch, args)
         '''
-        input 순서는 category + numeric + mask
+        input 순서는 category + continuous + mask
         
         'answerCode', 'interaction', 'assessmentItemID', 'testId', 'KnowledgeTag', + 추가 category
-        + 추가 num
+        + 추가 cont
         + 'mask'
         '''
         
@@ -119,10 +120,10 @@ def validate(valid_loader, model, args):
     for step, batch in enumerate(valid_loader):
         input = process_batch(batch, args)
         '''
-        input 순서는 category + numeric + mask
+        input 순서는 category + continuous + mask
         
         'answerCode', 'interaction', 'assessmentItemID', 'testId', 'KnowledgeTag', + 추가 category
-        + 추가 num
+        + 추가 cont
         + 'mask'
         '''
 
@@ -200,17 +201,17 @@ def get_model(args):
 # 배치 전처리
 def process_batch(batch, args):
     '''
-    batch 순서는 category + numeric + mask
+    batch 순서는 category + continuous + mask
     
     'answerCode', 'assessmentItemID', 'testId', 'KnowledgeTag', + 추가 category
-    + 추가 num
+    + 추가 cont
     + 'mask'
 
     원래코드
     # test, question, tag, correct, mask = batch
     '''
     cate_features = batch[:len(args.cate_cols)]
-    num_features = batch[len(args.cate_cols):len(args.cate_cols)+len(args.num_cols)]
+    cont_features = batch[len(args.cate_cols):len(args.cate_cols)+len(args.cont_cols)]
     mask = batch[-1]
     mask = mask.type(torch.FloatTensor) # change to float
 
@@ -249,7 +250,7 @@ def process_batch(batch, args):
             # question, test, tag
             features.append(((cate_feature + 1) * mask).to(torch.int64))
 
-    [features.append((num_feature * mask).to(torch.double).type(torch.FloatTensor)) for num_feature in num_features]
+    [features.append((cont_feature * mask).to(torch.double).type(torch.FloatTensor)) for cont_feature in cont_features]
 
     # gather index
     # 마지막 sequence만 사용하기 위한 index
@@ -290,6 +291,7 @@ def compute_loss(preds, targets, args):
     loss = torch.mean(loss)
     return loss
 
+
 def update_params(loss, model, optimizer, args):
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip_grad)
@@ -297,13 +299,11 @@ def update_params(loss, model, optimizer, args):
     optimizer.zero_grad()
 
 
-
 def save_checkpoint(state, model_dir, model_filename):
     print('saving model ...')
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
     torch.save(state, os.path.join(model_dir, model_filename))
-
 
 
 def load_model(args):
