@@ -42,7 +42,7 @@ class Preprocess:
     def __preprocessing(self, df, is_train = True):
         if not os.path.exists(self.args.asset_dir):
             os.makedirs(self.args.asset_dir)
-            
+
         for col in self.args.cate_cols:
             le = LabelEncoder()
             if is_train:
@@ -59,18 +59,18 @@ class Preprocess:
             df[col]= df[col].astype(str)
             test = le.transform(df[col])
             df[col] = test
-            
+
 
         def convert_time(s):
             timestamp = time.mktime(datetime.strptime(s, '%Y-%m-%d %H:%M:%S').timetuple())
             return int(timestamp)
 
         df['Timestamp'] = df['Timestamp'].apply(convert_time)
-        
+
         return df
 
     def __feature_engineering_num(self, df):
-        '''        
+        '''
         연속형 데이터를 데이터에 추가
 
         1. df에서 추가하시고
@@ -87,10 +87,10 @@ class Preprocess:
                 timestamp = time.mktime(datetime.strptime(s, '%Y-%m-%d %H:%M:%S').timetuple())
                 return int(timestamp)
 
-        df['Timestamp_int'] = df['Timestamp'].apply(convert_time)
-        df['elapsed_time'] = df.loc[:,['userID','Timestamp_int','testId']].groupby(['userID','testId']).diff().shift(-1).fillna(int(10))
-        
-        
+        # df['Timestamp_int'] = df['Timestamp'].apply(convert_time)
+        # df['elapsed_time'] = df.loc[:,['userID','Timestamp_int','testId']].groupby(['userID','testId']).diff().shift(-1).fillna(int(10))
+        df['elapsed_time'] = df['elapsed']
+
         df.sort_values(by=['userID','Timestamp'], inplace=True)
 
       # 유저가 푼 시험지에 대해, 유저의 전체 정답/풀이횟수/정답률 계산 (3번 풀었으면 3배)
@@ -99,7 +99,7 @@ class Preprocess:
         df['user_total_ans_cnt'] = df_group.cumcount()
         df['user_total_acc'] = df['user_total_correct_cnt'] / df['user_total_ans_cnt']
         df['user_total_acc'] = df['user_total_acc'].fillna(float(0))
-        
+
         df['et_by_kt'] = df.groupby('KnowledgeTag')['elapsed_time'].transform(lambda x: x.quantile(q=0.5))#KT별 평균 소요 시간
         df['et_by_as'] = df.groupby('assessmentItemID')['elapsed_time'].transform(lambda x: x.quantile(q=0.5))#문항별 평균 소요 시간
 
@@ -109,7 +109,7 @@ class Preprocess:
         return df
 
     def __feature_engineering_cate(self, df):
-        '''        
+        '''
         카테고리형 데이터를 데이터에 추가
 
         1. df에서 추가하시고
@@ -118,7 +118,7 @@ class Preprocess:
 
         # large category (대분류)
         df['assessment_category'] = df.apply(lambda row: row.assessmentItemID[2], axis = 1)#TODO # 대분류
-        
+
         self.args.cate_cols.extend(['assessment_category'])
         return df
 
@@ -164,7 +164,7 @@ class Preprocess:
         원래 코드
         group = df[columns].groupby('userID').apply(
                 lambda r: (
-                    r['testId'].values, 
+                    r['testId'].values,
                     r['assessmentItemID'].values,
                     r['KnowledgeTag'].values,
                     r['answerCode'].values
@@ -191,7 +191,7 @@ class DKTDataset(torch.utils.data.Dataset):
     def __getitem__(self, index):
         # category, numeric
         row = self.data[index]
-        
+
         # 각 data의 sequence length
         seq_len = len(row[0])
 
@@ -251,7 +251,7 @@ def collate(batch):
 def get_loaders(args, train, valid):
     pin_memory = True
     train_loader, valid_loader = None, None
-    
+
     if train is not None:
         trainset = DKTDataset(train, args)
         train_loader = torch.utils.data.DataLoader(trainset, num_workers=args.num_workers, shuffle=True,

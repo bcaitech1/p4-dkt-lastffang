@@ -7,13 +7,13 @@ from .optimizer import get_optimizer
 from .scheduler import get_scheduler
 from .criterion import get_criterion
 from .metric import get_metric
-from .model import LSTM, RNNATTN, Bert
+from .model import LSTM, LastQuery, RNNATTN, Bert
 
 import wandb
 
 def run(args, train_data, valid_data):
     train_loader, valid_loader = get_loaders(args, train_data, valid_data)
-    
+
     # only when using warmup scheduler
     args.total_steps = int(len(train_loader.dataset) / args.batch_size) * (args.n_epochs)
     args.warmup_steps = int(args.total_steps * args.warmup_ratio)
@@ -71,12 +71,12 @@ def train(train_loader, model, optimizer, args):
         input = process_batch(batch, args)
         '''
         input 순서는 category + numeric + mask
-        
+
         'answerCode', 'interaction', 'assessmentItemID', 'testId', 'KnowledgeTag', + 추가 category
         + 추가 num
         + 'mask'
         '''
-        
+
         preds = model(input)
         targets = input[0] # correct
         loss = compute_loss(preds, targets, args)
@@ -120,7 +120,7 @@ def validate(valid_loader, model, args):
         input = process_batch(batch, args)
         '''
         input 순서는 category + numeric + mask
-        
+
         'answerCode', 'interaction', 'assessmentItemID', 'testId', 'KnowledgeTag', + 추가 category
         + 추가 num
         + 'mask'
@@ -166,7 +166,7 @@ def inference(args, test_data):
         preds = model(input)
         # predictions
         preds = preds[:,-1]
-        
+
         if args.device == 'cuda':
             preds = preds.to('cpu').detach().numpy()
         else: # cpu
@@ -191,6 +191,7 @@ def get_model(args):
     if args.model == 'lstm': model = LSTM(args)
     if args.model == 'lstmattn' or args.model == 'gruattn': model = RNNATTN(args)
     if args.model == 'bert': model = Bert(args)
+    if args.model == 'lqtrnn': model = LastQuery(args)
 
     model.to(args.device)
 
@@ -201,7 +202,7 @@ def get_model(args):
 def process_batch(batch, args):
     '''
     batch 순서는 category + numeric + mask
-    
+
     'answerCode', 'assessmentItemID', 'testId', 'KnowledgeTag', + 추가 category
     + 추가 num
     + 'mask'
