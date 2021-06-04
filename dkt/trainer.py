@@ -63,7 +63,7 @@ def run(args, train_data, valid_data, cv_count=0):
         else:
             scheduler.step()
 
-    return model_to_save
+    return model_to_save, best_auc
 
 
 def train(train_loader, model, optimizer, args):

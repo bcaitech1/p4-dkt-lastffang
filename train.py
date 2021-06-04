@@ -77,11 +77,16 @@ def main(args):
 
     if args.do_CV == True:
         every_fold_preds = [0 for _ in range(744)]
+        auc_avg=0
         for cv_count in range(1,k+1):
             train_data, valid_data = preprocess.split_data(train_data_origin, start, interval, shuffle=True)
-            best_model = trainer.run(args, train_data, valid_data, cv_count)
+            best_model, best_auc = trainer.run(args, train_data, valid_data, cv_count)
             start += interval
             every_fold_preds = inferenceForCV(best_model, cv_count, every_fold_preds)
+            auc_avg+=best_auc
+        auc_avg/=5
+        print("*"*50,'auc_avg',"*"*50)
+        print(auc_avg)
 
     else:
         train_data, valid_data = preprocess.split_data(train_data_origin, start, interval, shuffle=True, seed=args.seed)
