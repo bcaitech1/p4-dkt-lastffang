@@ -14,7 +14,7 @@ from dkt.data_augmentation import DataAugmentation
 def main(args):
     wandb.login()
 
-    setSeeds(42)
+    setSeeds(args.seed)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     args.device = device
 
@@ -28,11 +28,6 @@ def main(args):
     preprocess = Preprocess(args)
     preprocess.load_train_data(args.train_file_to_load)
     train_data = preprocess.get_train_data()
-    print("train size",len(train_data))
-    #data_augmentation = DataAugmentation(args, train_data)
-    #augmented_train_data = data_augmentation.do_data_augmentation()
-    #print("aug train size", len(augmented_train_data))
-    #augmented_train_data = augmented_train_data[:60000]
     train_data, valid_data = preprocess.split_data(train_data, shuffle=True)
 
     if not args.run_name:
