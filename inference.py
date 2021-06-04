@@ -16,15 +16,16 @@ def main(args):
     '''
     args.cate_cols = ['answerCode', 'testId', 'assessmentItemID', 'KnowledgeTag']
     args.num_cols = []
-    
-    
+    # args.kfold_num = 5
+    # args.do_CV = True
+
     preprocess = Preprocess(args)
     preprocess.load_test_data(args.test_file_name)
     test_data = preprocess.get_test_data()
-    
+
 
     trainer.inference(args, test_data)
-    
+
 
 if __name__ == "__main__":
     args = parse_args(mode='inference')

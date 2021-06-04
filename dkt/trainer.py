@@ -11,7 +11,7 @@ from .model import LSTM, RNNATTN, Bert
 
 import wandb
 
-def run(args, train_data, valid_data, cv_count):
+def run(args, train_data, valid_data, cv_count=0):
     train_loader, valid_loader = get_loaders(args, train_data, valid_data)
     
     # only when using warmup scheduler
@@ -61,6 +61,8 @@ def run(args, train_data, valid_data, cv_count):
             scheduler.step(best_auc)
         else:
             scheduler.step()
+
+    return model_to_save
 
 
 def train(train_loader, model, optimizer, args):
@@ -156,11 +158,31 @@ def validate(valid_loader, model, args):
     return auc, acc, total_preds, total_targets
 
 
-def inference(args, test_data):
+def inference(args, test_data, model=None):
 
-    every_fold_preds=[0 for _ in range(744)]
-    for cv_num in range(1,args.kfold_num+1):
-        model = load_model(args, cv_num)
+    if model:
+        model.eval()
+        _, test_loader = get_loaders(args, None, test_data)
+
+        total_preds = []
+
+        for step, batch in enumerate(test_loader):
+            input = process_batch(batch, args)
+            preds = model(input)
+            # predictions
+            preds = preds[:, -1]
+
+            if args.device == 'cuda':
+                preds = preds.to('cpu').detach().numpy()
+            else:  # cpu
+                preds = preds.detach().numpy()
+
+            total_preds += list(preds)
+
+        return total_preds
+
+    else:
+        model = load_model(args)
         model.eval()
         _, test_loader = get_loaders(args, None, test_data)
 
@@ -179,10 +201,7 @@ def inference(args, test_data):
 
             total_preds+=list(preds)
 
-        every_fold_preds=[x+y for x,y in zip(every_fold_preds,total_preds)]
-
-        file_name='output'+str(cv_num)+'.csv'
-        write_path = os.path.join(args.output_dir, file_name)
+        write_path = os.path.join(args.output_dir, 'output.csv')
         if not os.path.exists(args.output_dir):
             os.makedirs(args.output_dir)
         with open(write_path, 'w', encoding='utf8') as w:
@@ -190,20 +209,6 @@ def inference(args, test_data):
             w.write("id,prediction\n")
             for id, p in enumerate(total_preds):
                 w.write('{},{}\n'.format(id,p))
-
-        if cv_num==args.kfold_num:
-            every_fold_preds=[i/cv_num for i in every_fold_preds]
-
-            file_name = 'output_final.csv'
-            write_path = os.path.join(args.output_dir, file_name)
-            if not os.path.exists(args.output_dir):
-                os.makedirs(args.output_dir)
-            with open(write_path, 'w', encoding='utf8') as w:
-                print("writing prediction : {}".format(write_path))
-                w.write("id,prediction\n")
-                for id, p in enumerate(every_fold_preds):
-                    w.write('{},{}\n'.format(id, p))
-
 
 def get_model(args):
     """
@@ -327,8 +332,8 @@ def save_checkpoint(state, model_dir, model_filename):
 
 
 
-def load_model(args, cv_num):
-    model_name='model'+str(cv_num)+'.pt'
+def load_model(args, cv_num=0):
+    model_name='model0.pt'
     model_path = os.path.join(args.model_dir, model_name)
     print("Loading Model from:", model_path)
     load_state = torch.load(model_path)
