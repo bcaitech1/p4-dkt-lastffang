@@ -18,7 +18,11 @@ def main(args):
     args.num_cols = []
     # args.kfold_num = 5
     # args.do_CV = True
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 6e28b4fd7acbcdc5895c6cd6ac30515492ec004e
     preprocess = Preprocess(args)
     preprocess.load_test_data(args.test_file_name)
     test_data = preprocess.get_test_data()
