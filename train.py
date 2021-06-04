@@ -62,22 +62,17 @@ def main(args):
     preprocess.load_test_data(args.test_file_name)
     test_data = preprocess.get_test_data()
 
+
     if not args.run_name:
         args.run_name = datetime.now(timezone("Asia/Seoul")).strftime("%Y-%m-%d-%H:%M:%S")
-<<<<<<< HEAD
 
     wandb.init(project='p-stage-4', entity='lastffang', name='-'.join([args.prefix, args.run_name]), config=vars(args))
-=======
-    # wandb.init(project='lastFown', entity='gonipark', name='-'.join([args.prefix, args.run_name]), config=vars(args))
-    wandb.init(project='dkt', name='-'.join([args.prefix, args.run_name]), config=vars(args))
->>>>>>> 6e28b4fd7acbcdc5895c6cd6ac30515492ec004e
 
     args.kfold_num = 5
     args.do_CV = True
     k = args.kfold_num
     
     interval = len(train_data_origin) // k
-<<<<<<< HEAD
     start = 0
 
     if args.do_CV == True:
@@ -88,40 +83,12 @@ def main(args):
             start += interval
             every_fold_preds = inferenceForCV(best_model, cv_count, every_fold_preds)
 
-=======
-    start=0
-    cv_count=1
-
-    if args.do_CV:
-        every_fold_preds = []
-        for i in range(k):
-            train_data, valid_data = preprocess.split_data(train_data_origin, start, interval, shuffle=True, seed=args.seed)
-            print(len(train_data), len(valid_data))
-            model_to_save = trainer.run(args, train_data, valid_data,cv_count)
-            start += interval
-            cv_count+=1
-            total_preds = trainer.inference(args, test_data, model_to_save, i)
-            every_fold_preds=[x+y for x,y in zip(every_fold_preds,total_preds)]
-
-        every_fold_preds=[i/k for i in every_fold_preds]
-        file_name = 'output_final.csv'
-        write_path = os.path.join(args.output_dir, file_name)
-        if not os.path.exists(args.output_dir):
-            os.makedirs(args.output_dir)
-        with open(write_path, 'w', encoding='utf8') as w:
-            print("writing prediction : {}".format(write_path))
-            w.write("id,prediction\n")
-            for id, p in enumerate(every_fold_preds):
-                w.write('{},{}\n'.format(id, p))
->>>>>>> 6e28b4fd7acbcdc5895c6cd6ac30515492ec004e
     else:
         train_data, valid_data = preprocess.split_data(train_data_origin, start, interval, shuffle=True, seed=args.seed)
         print(len(train_data), len(valid_data))
         trainer.run(args, train_data, valid_data)
 
     
-
-
 if __name__ == "__main__":
     args = parse_args(mode='train')
     os.makedirs(args.model_dir, exist_ok=True)
