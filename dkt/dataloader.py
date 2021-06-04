@@ -82,9 +82,12 @@ class Preprocess:
         1개 피처 추가 하는 방법
         df['answer_mean_max'] = df.groupby(['userID'])['answer_mean'].agg('max')
         df['answer_mean_max'] = df['answer_mean_max'].fillna(float(1))
+        df['assessment_category_mean_max'] = df.groupby(['userID'])['assessment_category_mean'].agg('max')
+        df['assessment_category_mean_max'] = df['assessment_category_mean_max'].fillna(float(1))
 
 
         '''
+        #self.__add_confirmed_continuous_features(df)
 
         return df
 
@@ -119,12 +122,14 @@ class Preprocess:
         df['answer_mean_max'] = df['answer_mean_max'].fillna(float(1))
 
 
+
+
         return df
 
     # 원하는 categorical feature 추가
     def __add_category_features(self, df):
 
-
+        #self.__add_confirmed_category_features(df)
         return df
 
     # inference 시 사용하게 되는 확정된 features
@@ -137,7 +142,7 @@ class Preprocess:
         csv_file_path_to_load = os.path.join(self.args.data_dir, file_name)
         df = pd.read_csv(csv_file_path_to_load)
 
-        print('Before feature engineering : ', self.args.cate_cols, self.args.num_cols)
+        print('Before feature engineering : ', self.args.cate_cols, self.args.cont_cols)
 
         if is_train and self.args.do_train_feature_engineering:
             df = self.__add_category_features(df)
@@ -152,16 +157,16 @@ class Preprocess:
 
 
         # 사용하고자 하는 features를 아래에 작성하면 됨 #
-        self.args.num_cols.extend(
+        self.args.cont_cols.extend(
             ['answer_mean', 'assessment_category_mean', 'knowledge_tag_mean', 'testId_answer_rate',
              'assessmentItemID_answer_rate', 'elapsed_time', 'user_total_acc', 'et_by_kt', 'et_by_as','answer_mean_max'])
         self.args.cate_cols.extend(['assessment_category'])
 
         df = self.__preprocessing(df, is_train)
 
-        print('After feature engineering : ', self.args.cate_cols, self.args.num_cols)
+        print('After feature engineering : ', self.args.cate_cols, self.args.cont_cols)
         print(df[self.args.cate_cols].head())
-        print(df[self.args.num_cols].head())
+        print(df[self.args.cont_cols].head())
 
         # print(df.head())
         '''
@@ -182,7 +187,7 @@ class Preprocess:
         # print(self.args.cate_len)
         # exit()
         df = df.sort_values(by=['userID', 'Timestamp'], axis=0)
-        columns = ['userID'] + self.args.cate_cols + self.args.num_cols
+        columns = ['userID'] + self.args.cate_cols + self.args.cont_cols
 
         '''
         df에서 카테고리 데이터를 label encoding한 내용으로 변환
@@ -199,7 +204,7 @@ class Preprocess:
             )
         '''
         group = df[columns].groupby('userID').apply(
-            lambda x: tuple([x[col].values for col in self.args.cate_cols + self.args.num_cols]))
+            lambda x: tuple([x[col].values for col in self.args.cate_cols + self.args.cont_cols]))
 
         return group.values
 
