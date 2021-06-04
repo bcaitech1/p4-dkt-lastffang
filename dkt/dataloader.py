@@ -69,26 +69,14 @@ class Preprocess:
 
         return df
 
-
-
-
     # 원하는 continuous feature 추가
     def __add_continuous_features(self, df):
-
-
-        # 예로 아래와 같이 추가 해볼 수 있다.
-        '''
-
-        1개 피처 추가 하는 방법
+'''
+        예로 아래와 같이 추가 해볼 수 있다.
+        #1개 피처 추가 하는 방법
         df['answer_mean_max'] = df.groupby(['userID'])['answer_mean'].agg('max')
         df['answer_mean_max'] = df['answer_mean_max'].fillna(float(1))
-        df['assessment_category_mean_max'] = df.groupby(['userID'])['assessment_category_mean'].agg('max')
-        df['assessment_category_mean_max'] = df['assessment_category_mean_max'].fillna(float(1))
-
-
-        '''
-        #self.__add_confirmed_continuous_features(df)
-
+'''
         return df
 
     # inference 시 사용하게 되는 확정된 features
@@ -122,12 +110,11 @@ class Preprocess:
         df['answer_mean_max'] = df['answer_mean_max'].fillna(float(1))
 
 
-
-
         return df
 
     # 원하는 categorical feature 추가
     def __add_category_features(self, df):
+      # 여기다가 추가 해보아요!
 
         #self.__add_confirmed_category_features(df)
         return df
@@ -154,7 +141,6 @@ class Preprocess:
         if not is_train:
             df = self.__add_confirmed_category_features(df)
             df = self.__add_confirmed_continuous_features(df)
-
 
         # 사용하고자 하는 features를 아래에 작성하면 됨 #
         self.args.cont_cols.extend(
@@ -186,6 +172,7 @@ class Preprocess:
 
         # print(self.args.cate_len)
         # exit()
+        
         df = df.sort_values(by=['userID', 'Timestamp'], axis=0)
         columns = ['userID'] + self.args.cate_cols + self.args.cont_cols
 
@@ -196,7 +183,7 @@ class Preprocess:
         원래 코드
         group = df[columns].groupby('userID').apply(
                 lambda r: (
-                    r['testId'].values, 
+                    r['testId'].values,
                     r['assessmentItemID'].values,
                     r['KnowledgeTag'].values,
                     r['answerCode'].values
