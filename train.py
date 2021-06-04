@@ -24,8 +24,9 @@ def main(args):
     args.cont_cols = []
 
     preprocess = Preprocess(args)
-    preprocess.load_train_data(args.train_file_to_load)
+    preprocess.load_train_data(args.file_name)
     train_data = preprocess.get_train_data()
+
     train_data, valid_data = preprocess.split_data(train_data, shuffle=True)
 
     if not args.run_name:
