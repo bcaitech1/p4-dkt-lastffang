@@ -17,7 +17,7 @@ def inferenceForCV(model, cv_count, every_fold_preds):
     preprocess에서 feature engineering을 거치면 뒤에 더 추가됨
     '''
     args.cate_cols = ['answerCode', 'testId', 'assessmentItemID', 'KnowledgeTag']
-    args.num_cols = []
+    args.cont_cols = []
 
     preprocess = Preprocess(args)
     preprocess.load_test_data(args.test_file_name)
@@ -79,10 +79,11 @@ def main(args):
             every_fold_preds = inferenceForCV(best_model, cv_count, every_fold_preds)
             auc_avg += best_auc
         auc_avg /= 5
+        print("*" * 50, 'auc_avg', "*" * 50)
         print(auc_avg)
 
     else:
-        train_data, valid_data = preprocess.split_data(train_data_origin, start, interval, shuffle=True)
+        train_data, valid_data = preprocess.split_data(train_data_origin, start, interval, shuffle=True, seed=args.seed)
         trainer.run(args, train_data, valid_data)
 
 

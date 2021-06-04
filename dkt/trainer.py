@@ -7,7 +7,7 @@ from .optimizer import get_optimizer
 from .scheduler import get_scheduler
 from .criterion import get_criterion
 from .metric import get_metric
-from .model import LSTM, RNNATTN, Bert
+from .model import LSTM,  LastQuery, RNNATTN, Bert
 
 import wandb
 
@@ -217,6 +217,7 @@ def get_model(args):
     if args.model == 'lstm': model = LSTM(args)
     if args.model == 'lstmattn' or args.model == 'gruattn': model = RNNATTN(args)
     if args.model == 'bert': model = Bert(args)
+    if args.model == 'lqtrnn': model = LastQuery(args)
 
     model.to(args.device)
 
@@ -236,7 +237,7 @@ def process_batch(batch, args):
     # test, question, tag, correct, mask = batch
     '''
     cate_features = batch[:len(args.cate_cols)]
-    num_features = batch[len(args.cate_cols):len(args.cate_cols) + len(args.cont_cols)]
+    cont_features = batch[len(args.cate_cols):len(args.cate_cols)+len(args.cont_cols)]
     mask = batch[-1]
     mask = mask.type(torch.FloatTensor)  # change to float
 
@@ -275,7 +276,7 @@ def process_batch(batch, args):
             # question, test, tag
             features.append(((cate_feature + 1) * mask).to(torch.int64))
 
-    [features.append((num_feature * mask).to(torch.double).type(torch.FloatTensor)) for num_feature in num_features]
+    [features.append((cont_feature * mask).to(torch.double).type(torch.FloatTensor)) for cont_feature in cont_features]
 
     # gather index
     # 마지막 sequence만 사용하기 위한 index
