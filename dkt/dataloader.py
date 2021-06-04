@@ -69,10 +69,6 @@ class Preprocess:
 
         return df
 
-
-
-
-
     # 원하는 continuous feature 추가
     def __add_continuous_features(self, df):
 
@@ -120,6 +116,7 @@ class Preprocess:
     # 원하는 categorical feature 추가
     def __add_category_features(self, df):
       # 여기다가 추가 해보아요!
+
 
         return df
 
@@ -188,7 +185,7 @@ class Preprocess:
         원래 코드
         group = df[columns].groupby('userID').apply(
                 lambda r: (
-                    r['testId'].values, 
+                    r['testId'].values,
                     r['assessmentItemID'].values,
                     r['KnowledgeTag'].values,
                     r['answerCode'].values
