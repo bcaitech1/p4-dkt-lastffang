@@ -8,8 +8,6 @@ import wandb
 from datetime import datetime
 from pytz import timezone
 
-from dkt.data_augmentation import DataAugmentation
-
 
 def main(args):
     wandb.login()
