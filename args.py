@@ -14,7 +14,7 @@ def parse_args(mode):
     parser.add_argument('--data_dir', default='/opt/ml/input/data/train_dataset', type=str, help='data directory')
     parser.add_argument('--asset_dir', default='asset/', type=str, help='data directory')
 
-    parser.add_argument('--file_name', default='train_data.csv', type=str, help='train file name')
+    parser.add_argument('--file_name', default='train_data_preprocessed.csv', type=str, help='train file name')
 
     parser.add_argument('--model_dir', default='models/', type=str, help='model directory')
     parser.add_argument('--model_name', default='model.pt', type=str, help='model file name')
@@ -44,11 +44,11 @@ def parse_args(mode):
     parser.add_argument('--plateau_factor', default=0.5, type=float, help='factor of plateau scheduler')
 
     # 훈련
-    parser.add_argument('--n_epochs', default=20, type=int, help='number of epochs')
+    parser.add_argument('--n_epochs', default=300, type=int, help='number of epochs')
     parser.add_argument('--batch_size', default=64, type=int, help='batch size')
     parser.add_argument('--lr', default=0.0001, type=float, help='learning rate')
     parser.add_argument('--clip_grad', default=10, type=int, help='clip grad')
-    parser.add_argument('--patience', default=5, type=int, help='for early stopping')
+    parser.add_argument('--patience', default=20, type=int, help='for early stopping')
     parser.add_argument('--warmup_ratio', default=0.1, type=float, help='warmup step ratio')
 
 
@@ -60,6 +60,10 @@ def parse_args(mode):
     parser.add_argument('--optimizer', default='adam', type=str, choices=choices["optimizer_options"], help='optimizer type')
     parser.add_argument('--scheduler', default='plateau', type=str, choices=choices["scheduler_options"], help='scheduler type')
     parser.add_argument('--criterion', default='BCE', type=str, choices=choices["criterion_options"], help='criterion type')
+
+    # cv
+    # parser.add_argument('--kfold_num', default=5, type=int, help='number of folds')
+    parser.add_argument('--augmentation', default=False, action='store_true', help='train data augmentation option')
 
     args = parser.parse_args()
 
