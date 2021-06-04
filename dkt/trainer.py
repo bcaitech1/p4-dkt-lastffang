@@ -13,6 +13,8 @@ import wandb
 
 def run(args, train_data, valid_data):
 
+
+
     train_loader, valid_loader = get_loaders(args, train_data, valid_data)
 
     # only when using warmup scheduler
@@ -33,11 +35,11 @@ def run(args, train_data, valid_data):
         train_auc, train_acc, train_loss = train(train_loader, model, optimizer, args)
 
         ### VALID
-        auc, acc,_ , _ = validate(valid_loader, model, args)
+        auc, acc,_ , _ , val_loss= validate(valid_loader, model, args)
 
         ### TODO: model save or early stopping
         wandb.log({"epoch": epoch, "train_loss": train_loss, "train_auc": train_auc, "train_acc":train_acc,
-                  "valid_auc":auc, "valid_acc":acc})
+                  "valid_auc":auc, "valid_acc":acc, "val_loss":val_loss})
         if auc > best_auc:
             best_auc = auc
             # torch.nn.DataParallel로 감싸진 경우 원래의 model을 가져옵니다.
@@ -116,6 +118,7 @@ def validate(valid_loader, model, args):
 
     total_preds = []
     total_targets = []
+    losses = []
     for step, batch in enumerate(valid_loader):
         input = process_batch(batch, args)
         '''
@@ -127,7 +130,7 @@ def validate(valid_loader, model, args):
 
         preds = model(input)
         targets = input[0] # correct
-
+        loss = compute_loss(preds, targets, args)
         # predictions
         preds = preds[:,-1]
         targets = targets[:,-1]
@@ -141,16 +144,17 @@ def validate(valid_loader, model, args):
 
         total_preds.append(preds)
         total_targets.append(targets)
+        losses.append(loss)
 
     total_preds = np.concatenate(total_preds)
     total_targets = np.concatenate(total_targets)
 
     # Train AUC / ACC
     auc, acc = get_metric(total_targets, total_preds)
-
+    loss_avg = sum(losses) / len(losses)
     print(f'VALID AUC : {auc} ACC : {acc}\n')
 
-    return auc, acc, total_preds, total_targets
+    return auc, acc, total_preds, total_targets,loss_avg
 
 
 def inference(args, test_data):
