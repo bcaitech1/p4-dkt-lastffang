@@ -6,7 +6,7 @@ import torch
 from dkt.utils import setSeeds
 
 def main(args):
-    setSeeds(args.seed)
+    setSeeds(42)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     args.device = device
 
@@ -15,13 +15,11 @@ def main(args):
     preprocess에서 feature engineering을 거치면 뒤에 더 추가됨
     '''
     args.cate_cols = ['answerCode', 'testId', 'assessmentItemID', 'KnowledgeTag']
-    args.num_cols = []
     args.cont_cols = []
 
     preprocess = Preprocess(args)
     preprocess.load_test_data(args.test_file_name)
     test_data = preprocess.get_test_data()
-
 
     trainer.inference(args, test_data)
 
