@@ -6,7 +6,7 @@ import torch
 from dkt.utils import setSeeds
 
 def main(args):
-    setSeeds(42)
+    setSeeds(args.seed)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     args.device = device
 
