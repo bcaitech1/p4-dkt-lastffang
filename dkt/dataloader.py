@@ -42,7 +42,7 @@ class Preprocess:
     def __preprocessing(self, df, is_train = True):
         if not os.path.exists(self.args.asset_dir):
             os.makedirs(self.args.asset_dir)
-            
+
         for col in self.args.cate_cols:
             le = LabelEncoder()
             if is_train:
@@ -59,59 +59,57 @@ class Preprocess:
             df[col]= df[col].astype(str)
             test = le.transform(df[col])
             df[col] = test
-            
+
 
         def convert_time(s):
             timestamp = time.mktime(datetime.strptime(s, '%Y-%m-%d %H:%M:%S').timetuple())
             return int(timestamp)
 
         df['Timestamp'] = df['Timestamp'].apply(convert_time)
-        
+
         return df
 
-    def __feature_engineering_num(self, df):
-        '''        
+    def __feature_engineering_cont(self, df):
+        '''
         연속형 데이터를 데이터에 추가
 
         1. df에서 추가하시고
-        2. self.args.num_cols에 feature 이름 추가해주시면 됩니다
+        2. self.args.cont_cols에 feature 이름 추가해주시면 됩니다
         '''
 
         df['answer_mean'] = df.groupby('userID')['answerCode'].transform('mean') # 사용자별 정답률
-      #   df['assessment_category_mean'] = df.groupby('assessment_category')['answerCode'].transform('mean') # 대분류의 정답률
-      #   df['knowledge_tag_mean'] = df.groupby('KnowledgeTag')['answerCode'].transform('mean') # 지식 태그 분류별 정답률
-      #   df['testId_answer_rate'] = df.groupby('testId')['answerCode'].transform('mean') #시험지 별로 정답률
-      #   df['assessmentItemID_answer_rate'] = df.groupby('assessmentItemID')['answerCode'].transform('mean') #문항별 정답률
-      #
-      #   def convert_time(s):
-      #           timestamp = time.mktime(datetime.strptime(s, '%Y-%m-%d %H:%M:%S').timetuple())
-      #           return int(timestamp)
-      #
-      #   df['Timestamp_int'] = df['Timestamp'].apply(convert_time)
-      #   df['elapsed_time'] = df.loc[:,['userID','Timestamp_int','testId']].groupby(['userID','testId']).diff().shift(-1).fillna(int(10))
-      #
-      #
-      #   df.sort_values(by=['userID','Timestamp'], inplace=True)
-      #
-      # # 유저가 푼 시험지에 대해, 유저의 전체 정답/풀이횟수/정답률 계산 (3번 풀었으면 3배)
-      #   df_group = df.groupby(['userID','testId'])['answerCode']
-      #   df['user_total_correct_cnt'] = df_group.transform(lambda x: x.cumsum().shift(1))
-      #   df['user_total_ans_cnt'] = df_group.cumcount()
-      #   df['user_total_acc'] = df['user_total_correct_cnt'] / df['user_total_ans_cnt']
-      #   df['user_total_acc'] = df['user_total_acc'].fillna(float(0))
-      #
-      #   df['et_by_kt'] = df.groupby('KnowledgeTag')['elapsed_time'].transform(lambda x: x.quantile(q=0.5))#KT별 평균 소요 시간
-      #   df['et_by_as'] = df.groupby('assessmentItemID')['elapsed_time'].transform(lambda x: x.quantile(q=0.5))#문항별 평균 소요 시간
-      #   df['answer_mean_max'] = df.groupby(['userID'])['answer_mean'].agg('max')
-      #   df['answer_mean_max'] = df['answer_mean_max'].fillna(float(1))
-      #
-        self.args.num_cols.extend(['answer_mean'])#, 'assessment_category_mean', 'knowledge_tag_mean', 'testId_answer_rate', \
-      #         'assessmentItemID_answer_rate', 'elapsed_time', 'user_total_acc', 'et_by_kt', 'et_by_as','answer_mean_max'])
+        df['assessment_category_mean'] = df.groupby('assessment_category')['answerCode'].transform('mean') # 대분류의 정답률
+        df['knowledge_tag_mean'] = df.groupby('KnowledgeTag')['answerCode'].transform('mean') # 지식 태그 분류별 정답률
+        df['testId_answer_rate'] = df.groupby('testId')['answerCode'].transform('mean') #시험지 별로 정답률
+        df['assessmentItemID_answer_rate'] = df.groupby('assessmentItemID')['answerCode'].transform('mean') #문항별 정답률
+
+        def convert_time(s):
+                timestamp = time.mktime(datetime.strptime(s, '%Y-%m-%d %H:%M:%S').timetuple())
+                return int(timestamp)
+
+        df['Timestamp_int'] = df['Timestamp'].apply(convert_time)
+        df['elapsed_time'] = df.loc[:,['userID','Timestamp_int','testId']].groupby(['userID','testId']).diff().shift(-1).fillna(int(10))
+        # df['elapsed_time'] = df['elapsed']
+
+        df.sort_values(by=['userID','Timestamp'], inplace=True)
+
+      # 유저가 푼 시험지에 대해, 유저의 전체 정답/풀이횟수/정답률 계산 (3번 풀었으면 3배)
+        df_group = df.groupby(['userID','testId'])['answerCode']
+        df['user_total_correct_cnt'] = df_group.transform(lambda x: x.cumsum().shift(1))
+        df['user_total_ans_cnt'] = df_group.cumcount()
+        df['user_total_acc'] = df['user_total_correct_cnt'] / df['user_total_ans_cnt']
+        df['user_total_acc'] = df['user_total_acc'].fillna(float(0))
+
+        df['et_by_kt'] = df.groupby('KnowledgeTag')['elapsed_time'].transform(lambda x: x.quantile(q=0.5))#KT별 평균 소요 시간
+        df['et_by_as'] = df.groupby('assessmentItemID')['elapsed_time'].transform(lambda x: x.quantile(q=0.5))#문항별 평균 소요 시간
+
+        self.args.cont_cols.extend(['answer_mean', 'assessment_category_mean', 'knowledge_tag_mean', 'testId_answer_rate', \
+            'assessmentItemID_answer_rate', 'elapsed_time', 'user_total_acc', 'et_by_kt', 'et_by_as'])
 
         return df
 
     def __feature_engineering_cate(self, df):
-        '''        
+        '''
         카테고리형 데이터를 데이터에 추가
 
         1. df에서 추가하시고
@@ -120,7 +118,7 @@ class Preprocess:
 
         # large category (대분류)
         df['assessment_category'] = df.apply(lambda row: row.assessmentItemID[2], axis = 1)#TODO # 대분류
-        
+
         self.args.cate_cols.extend(['assessment_category'])
         return df
 
@@ -128,15 +126,15 @@ class Preprocess:
         csv_file_path = os.path.join(self.args.data_dir, file_name)
         df = pd.read_csv(csv_file_path)#, nrows=100000)
 
-        print('Before feature engineering : ', self.args.cate_cols, self.args.num_cols)
+        print('Before feature engineering : ', self.args.cate_cols, self.args.cont_cols)
 
         df = self.__feature_engineering_cate(df)
-        df = self.__feature_engineering_num(df)
+        df = self.__feature_engineering_cont(df)
         df = self.__preprocessing(df, is_train)
 
-        print('After feature engineering : ', self.args.cate_cols, self.args.num_cols)
+        print('After feature engineering : ', self.args.cate_cols, self.args.cont_cols)
         print(df[self.args.cate_cols].head())
-        print(df[self.args.num_cols].head())
+        print(df[self.args.cont_cols].head())
 
         # print(df.head())
         '''
@@ -157,7 +155,7 @@ class Preprocess:
         # print(self.args.cate_len)
         # exit()
         df = df.sort_values(by=['userID','Timestamp'], axis=0)
-        columns = ['userID'] + self.args.cate_cols + self.args.num_cols
+        columns = ['userID'] + self.args.cate_cols + self.args.cont_cols
 
         '''
         df에서 카테고리 데이터를 label encoding한 내용으로 변환
@@ -166,7 +164,7 @@ class Preprocess:
         원래 코드
         group = df[columns].groupby('userID').apply(
                 lambda r: (
-                    r['testId'].values, 
+                    r['testId'].values,
                     r['assessmentItemID'].values,
                     r['KnowledgeTag'].values,
                     r['answerCode'].values
@@ -174,7 +172,7 @@ class Preprocess:
             )
         '''
         group = df[columns].groupby('userID').apply(
-            lambda x : tuple([x[col].values for col in self.args.cate_cols + self.args.num_cols]))
+            lambda x : tuple([x[col].values for col in self.args.cate_cols + self.args.cont_cols]))
 
         return group.values
 
@@ -193,7 +191,7 @@ class DKTDataset(torch.utils.data.Dataset):
     def __getitem__(self, index):
         # category, numeric
         row = self.data[index]
-        
+
         # 각 data의 sequence length
         seq_len = len(row[0])
 
@@ -253,7 +251,7 @@ def collate(batch):
 def get_loaders(args, train, valid):
     pin_memory = True
     train_loader, valid_loader = None, None
-    
+
     if train is not None:
         trainset = DKTDataset(train, args)
         train_loader = torch.utils.data.DataLoader(trainset, num_workers=args.num_workers, shuffle=True,

@@ -6,7 +6,7 @@ import torch
 from dkt.utils import setSeeds
 
 def main(args):
-    setSeeds(42)
+    setSeeds(args.seed)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     args.device = device
 
@@ -16,13 +16,8 @@ def main(args):
     '''
     args.cate_cols = ['answerCode', 'testId', 'assessmentItemID', 'KnowledgeTag']
     args.num_cols = []
-    # args.kfold_num = 5
-    # args.do_CV = True
-<<<<<<< HEAD
+    args.cont_cols = []
 
-=======
-    
->>>>>>> 6e28b4fd7acbcdc5895c6cd6ac30515492ec004e
     preprocess = Preprocess(args)
     preprocess.load_test_data(args.test_file_name)
     test_data = preprocess.get_test_data()

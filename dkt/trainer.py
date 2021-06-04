@@ -7,13 +7,14 @@ from .optimizer import get_optimizer
 from .scheduler import get_scheduler
 from .criterion import get_criterion
 from .metric import get_metric
-from .model import LSTM, RNNATTN, Bert
+from .model import LSTM, LastQuery, RNNATTN, Bert
 
 import wandb
 
 def run(args, train_data, valid_data, cv_count=0):
+
     train_loader, valid_loader = get_loaders(args, train_data, valid_data)
-    
+
     # only when using warmup scheduler
     args.total_steps = int(len(train_loader.dataset) / args.batch_size) * (args.n_epochs)
     args.warmup_steps = int(args.total_steps * args.warmup_ratio)
@@ -74,13 +75,13 @@ def train(train_loader, model, optimizer, args):
     for step, batch in enumerate(train_loader):
         input = process_batch(batch, args)
         '''
-        input 순서는 category + numeric + mask
-        
+        input 순서는 category + continuous + mask
+
         'answerCode', 'interaction', 'assessmentItemID', 'testId', 'KnowledgeTag', + 추가 category
-        + 추가 num
+        + 추가 cont
         + 'mask'
         '''
-        
+
         preds = model(input)
         targets = input[0] # correct
         loss = compute_loss(preds, targets, args)
@@ -123,10 +124,10 @@ def validate(valid_loader, model, args):
     for step, batch in enumerate(valid_loader):
         input = process_batch(batch, args)
         '''
-        input 순서는 category + numeric + mask
-        
+        input 순서는 category + continuous + mask
+
         'answerCode', 'interaction', 'assessmentItemID', 'testId', 'KnowledgeTag', + 추가 category
-        + 추가 num
+        + 추가 cont
         + 'mask'
         '''
 
@@ -193,6 +194,7 @@ def inference(args, test_data, model=None):
             preds = model(input)
             # predictions
             preds = preds[:,-1]
+    
 
             if args.device == 'cuda':
                 preds = preds.to('cpu').detach().numpy()
@@ -217,6 +219,7 @@ def get_model(args):
     if args.model == 'lstm': model = LSTM(args)
     if args.model == 'lstmattn' or args.model == 'gruattn': model = RNNATTN(args)
     if args.model == 'bert': model = Bert(args)
+    if args.model == 'lqtrnn': model = LastQuery(args)
 
     model.to(args.device)
 
@@ -226,17 +229,17 @@ def get_model(args):
 # 배치 전처리
 def process_batch(batch, args):
     '''
-    batch 순서는 category + numeric + mask
-    
+    batch 순서는 category + continuous + mask
+
     'answerCode', 'assessmentItemID', 'testId', 'KnowledgeTag', + 추가 category
-    + 추가 num
+    + 추가 cont
     + 'mask'
 
     원래코드
     # test, question, tag, correct, mask = batch
     '''
     cate_features = batch[:len(args.cate_cols)]
-    num_features = batch[len(args.cate_cols):len(args.cate_cols)+len(args.num_cols)]
+    cont_features = batch[len(args.cate_cols):len(args.cate_cols)+len(args.cont_cols)]
     mask = batch[-1]
     mask = mask.type(torch.FloatTensor) # change to float
 
@@ -275,7 +278,7 @@ def process_batch(batch, args):
             # question, test, tag
             features.append(((cate_feature + 1) * mask).to(torch.int64))
 
-    [features.append((num_feature * mask).to(torch.double).type(torch.FloatTensor)) for num_feature in num_features]
+    [features.append((cont_feature * mask).to(torch.double).type(torch.FloatTensor)) for cont_feature in cont_features]
 
     # gather index
     # 마지막 sequence만 사용하기 위한 index
@@ -316,12 +319,12 @@ def compute_loss(preds, targets, args):
     loss = torch.mean(loss)
     return loss
 
+
 def update_params(loss, model, optimizer, args):
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip_grad)
     optimizer.step()
     optimizer.zero_grad()
-
 
 
 def save_checkpoint(state, model_dir, model_filename):
@@ -331,10 +334,10 @@ def save_checkpoint(state, model_dir, model_filename):
     torch.save(state, os.path.join(model_dir, model_filename))
 
 
-
 def load_model(args, cv_num=0):
     model_name='model0.pt'
     model_path = os.path.join(args.model_dir, model_name)
+
     print("Loading Model from:", model_path)
     load_state = torch.load(model_path)
     model = get_model(args)
