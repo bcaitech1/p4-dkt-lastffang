@@ -76,8 +76,7 @@ def parse_args(mode):
 
     # aumentation option
     parser.add_argument('--augmentation', default=False, action='store_true', help='')
-    parser.add_argument('--aug_shuffle', default=False, action='store_true', help='')
-    parser.add_argument('--aug_shuffle_n', default=1, type=int, help='')
+    parser.add_argument('--aug_shuffle_n', default=0, type=int, help='')
 
     args = parser.parse_args()
 

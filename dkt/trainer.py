@@ -34,7 +34,7 @@ def slidding_window(data, args):
 
                 # Shuffle
                 # 마지막 데이터의 경우 shuffle을 하지 않는다
-                if args.aug_shuffle and window_i + 1 != total_window:
+                if args.aug_shuffle_n > 0 and window_i + 1 != total_window:
                     shuffle_datas = shuffle(window_data, window_size, args)
                     augmented_datas += shuffle_datas
                 else:
