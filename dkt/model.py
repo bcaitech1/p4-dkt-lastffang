@@ -18,18 +18,18 @@ def init_layers(args):
             nn.Sequential(
                 nn.Embedding(args.cate_len[cate_col] + 1, args.hidden_dim//3).to(args.device) if cate_col != 'answerCode' \
                 else nn.Embedding(args.cate_len[cate_col], args.hidden_dim//3).to(args.device),
-                nn.LayerNorm(args.hidden_dim//3))
+                nn.LayerNorm(args.hidden_dim//3).to(args.device))
 
     for cont_col in args.cont_cols:
         cont_embedding_layers[cont_col] = \
             nn.Sequential(
                 nn.Linear(1, args.hidden_dim//3).to(args.device),
-                nn.LayerNorm(args.hidden_dim//3))
+                nn.LayerNorm(args.hidden_dim//3).to(args.device))
 
     # embedding combination projection
     comb_proj = nn.Sequential(
         nn.Linear((args.hidden_dim//3)*((len(args.cont_cols) + len(args.cate_cols))), args.hidden_dim),
-        nn.LayerNorm(args.hidden_dim))
+        nn.LayerNorm(args.hidden_dim).to(args.device))
 
     return cate_embedding_layers, cont_embedding_layers, comb_proj
 
@@ -38,11 +38,9 @@ def forward_layers(args, input, cate_embedding_layers, cont_embedding_layers):
 
     '''
     input 순서는 category + continuous + mask
-
     'answerCode', 'interaction', 'assessmentItemID', 'testId', 'KnowledgeTag', + 추가 category
     추가 cont
     'mask'
-
     원래 코드
     test, question, tag, _, mask, interaction = input
     '''
@@ -52,7 +50,6 @@ def forward_layers(args, input, cate_embedding_layers, cont_embedding_layers):
 
     '''
     cate_embedding_layers에 input(data) 넣어서 feature로 output
-
     원래 코드
     embed_interaction = self.embedding_interaction(interaction)
     embed_test = self.embedding_test(test)
@@ -89,7 +86,6 @@ class LSTM(nn.Module):
         '''
         cate_embedding_layers에 category embedding layer들이 list로 저장
         cate_len dictionary에 key : cate_column의 이름, value : category의 개수
-
         원래 코드
         interaction은 현재 correct로 구성되어있다. correct(1, 2) + padding(0)
         self.embedding_interaction = nn.Embedding(3, self.hidden_dim//3)
@@ -158,7 +154,6 @@ class RNNATTN(nn.Module):
         '''
         cate_embedding_layers에 category embedding layer들이 list로 저장
         cate_len dictionary에 key : cate_column의 이름, value : category의 개수
-
         원래 코드
         interaction은 현재 correct로 구성되어있다. correct(1, 2) + padding(0)
         self.embedding_interaction = nn.Embedding(3, self.hidden_dim//3)
@@ -322,10 +317,8 @@ class LastQuery(nn.Module):
         self.embedding_question = nn.Embedding(self.args.n_questions + 1, self.hidden_dim//3)
         self.embedding_tag = nn.Embedding(self.args.n_tag + 1, self.hidden_dim//3)
         self.embedding_position = nn.Embedding(self.args.max_seq_len, self.hidden_dim)
-
         # embedding combination projection
         self.comb_proj = nn.Linear((self.hidden_dim//3)*4, self.hidden_dim)
-
         # 기존 keetar님 솔루션에서는 Positional Embedding은 사용되지 않습니다
         # 하지만 사용 여부는 자유롭게 결정해주세요 :)
         # self.embedding_position = nn.Embedding(self.args.max_seq_len, self.hidden_dim)
@@ -391,7 +384,6 @@ class LastQuery(nn.Module):
         embed_test = self.embedding_test(test)
         embed_question = self.embedding_question(question)
         embed_tag = self.embedding_tag(tag)
-
         embed = torch.cat([embed_interaction,
                            embed_test,
                            embed_question,
