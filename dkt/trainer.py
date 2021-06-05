@@ -7,7 +7,7 @@ from .optimizer import get_optimizer
 from .scheduler import get_scheduler
 from .criterion import get_criterion
 from .metric import get_metric
-from .model import LSTM, RNNATTN, Bert
+from .model import LSTM, LastQuery, RNNATTN, Bert
 
 import wandb
 
@@ -85,7 +85,7 @@ def run(args, train_data, valid_data):
             train_data = augmented_train_data
 
     train_loader, valid_loader = get_loaders(args, train_data, valid_data)
-    
+
     # only when using warmup scheduler
     args.total_steps = int(len(train_loader.dataset) / args.batch_size) * (args.n_epochs)
     args.warmup_steps = int(args.total_steps * args.warmup_ratio)
@@ -143,12 +143,11 @@ def train(train_loader, model, optimizer, args):
         input = process_batch(batch, args)
         '''
         input 순서는 category + continuous + mask
-        
         'answerCode', 'interaction', 'assessmentItemID', 'testId', 'KnowledgeTag', + 추가 category
         + 추가 cont
         + 'mask'
         '''
-        
+
         preds = model(input)
         targets = input[0] # correct
         loss = compute_loss(preds, targets, args)
@@ -192,7 +191,6 @@ def validate(valid_loader, model, args):
         input = process_batch(batch, args)
         '''
         input 순서는 category + continuous + mask
-        
         'answerCode', 'interaction', 'assessmentItemID', 'testId', 'KnowledgeTag', + 추가 category
         + 추가 cont
         + 'mask'
@@ -238,7 +236,7 @@ def inference(args, test_data):
         preds = model(input)
         # predictions
         preds = preds[:,-1]
-        
+
         if args.device == 'cuda':
             preds = preds.to('cpu').detach().numpy()
         else: # cpu
@@ -263,6 +261,7 @@ def get_model(args):
     if args.model == 'lstm': model = LSTM(args)
     if args.model == 'lstmattn' or args.model == 'gruattn': model = RNNATTN(args)
     if args.model == 'bert': model = Bert(args)
+    if args.model == 'lqtrnn': model = LastQuery(args)
 
     model.to(args.device)
 
@@ -273,11 +272,9 @@ def get_model(args):
 def process_batch(batch, args):
     '''
     batch 순서는 category + continuous + mask
-    
     'answerCode', 'assessmentItemID', 'testId', 'KnowledgeTag', + 추가 category
     + 추가 cont
     + 'mask'
-
     원래코드
     # test, question, tag, correct, mask = batch
     '''
@@ -298,7 +295,6 @@ def process_batch(batch, args):
             interaction
             interaction을 임시적으로 correct를 한칸 우측으로 이동한 것으로 사용
             saint의 경우 decoder에 들어가는 input이다
-
             오피스아워에서 언급한 코드 수정내용 반영
             '''
 
@@ -312,7 +308,6 @@ def process_batch(batch, args):
         else:
             '''
             일반 category
-
             원래 코드
             test = ((test + 1) * mask).to(torch.int64)
             question = ((question + 1) * mask).to(torch.int64)
@@ -330,7 +325,6 @@ def process_batch(batch, args):
 
     '''
     device memory로 이동
-
     원래 코드
     test = test.to(args.device)
     question = question.to(args.device)
