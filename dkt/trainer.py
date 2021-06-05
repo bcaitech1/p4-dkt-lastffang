@@ -34,7 +34,7 @@ def slidding_window(data, args):
 
                 # Shuffle
                 # 마지막 데이터의 경우 shuffle을 하지 않는다
-                if args.shuffle and window_i + 1 != total_window:
+                if args.aug_shuffle and window_i + 1 != total_window:
                     shuffle_datas = shuffle(window_data, window_size, args)
                     augmented_datas += shuffle_datas
                 else:
@@ -53,7 +53,8 @@ def slidding_window(data, args):
 
 def shuffle(data, data_size, args):
     shuffle_datas = []
-    for i in range(args.shuffle_n):
+    shuffle_datas.append(data)
+    for i in range(args.aug_shuffle_n):
         # shuffle 횟수만큼 window를 랜덤하게 계속 섞어서 데이터로 추가
         shuffle_data = []
         random_index = np.random.permutation(data_size)
@@ -75,10 +76,9 @@ def run(args, train_data, valid_data):
     '''
     
     # augmentation
-    if args.do_augmentaion:
+    if args.augmentation:
         args.window = True
         args.stride = args.max_seq_len
-        args.shuffle = False
         augmented_train_data = data_augmentation(train_data, args)
         if len(augmented_train_data) != len(train_data):
             print(f"Data Augmentation applied. Train data {len(train_data)} -> {len(augmented_train_data)}\n")
