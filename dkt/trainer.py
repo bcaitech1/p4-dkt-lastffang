@@ -69,19 +69,21 @@ def data_augmentation(data, args):
     return data
 
 def run(args, train_data, valid_data):
-    # augmentation
-    args.window = True
-    args.stride = 5
-    args.shuffle = False
-    augmented_train_data = data_augmentation(train_data, args)
-    if len(augmented_train_data) != len(train_data):
-        print(f"Data Augmentation applied. Train data {len(train_data)} -> {len(augmented_train_data)}\n")
-        train_data = augmented_train_data
     '''
     #TODO
     max_seq_len까지만 사용, 나머지는 버리는데 이부분에서 data augmentation 필요
     '''
     
+    # augmentation
+    if args.do_augmentaion:
+        args.window = True
+        args.stride = args.max_seq_len
+        args.shuffle = False
+        augmented_train_data = data_augmentation(train_data, args)
+        if len(augmented_train_data) != len(train_data):
+            print(f"Data Augmentation applied. Train data {len(train_data)} -> {len(augmented_train_data)}\n")
+            train_data = augmented_train_data
+
     train_loader, valid_loader = get_loaders(args, train_data, valid_data)
     
     # only when using warmup scheduler

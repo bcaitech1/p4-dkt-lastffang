@@ -61,6 +61,9 @@ def parse_args(mode):
     parser.add_argument('--scheduler', default='plateau', type=str, choices=choices["scheduler_options"], help='scheduler type')
     parser.add_argument('--criterion', default='BCE', type=str, choices=choices["criterion_options"], help='criterion type')
 
+    # aumentation option
+    parser.add_argument('--do_augmentation', default=False, action='store_true', help='')
+
     args = parser.parse_args()
 
     return args
