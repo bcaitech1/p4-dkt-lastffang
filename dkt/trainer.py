@@ -227,7 +227,7 @@ def get_model(args):
 # 배치 전처리
 def process_batch(batch, args):
     '''
-    batch 순서는 category + numeric + mask
+    batch 순서는 category + continuous + mask
 
     'answerCode', 'assessmentItemID', 'testId', 'KnowledgeTag', + 추가 category
     + 추가 num
@@ -334,7 +334,7 @@ def save_checkpoint(state, model_dir, model_filename):
 
 
 def load_model(args, cv_num=0):
-    model_name = 'model0.pt'
+    model_name = 'model.pt'
     model_path = os.path.join(args.model_dir, model_name)
     print("Loading Model from:", model_path)
     load_state = torch.load(model_path)
