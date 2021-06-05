@@ -138,7 +138,7 @@ dmypy.json
 cython_debug/
 
 # Mac DS_Store
-.DS_Stre
+.DS_Store
 
 # wandb folder
 wandb/
