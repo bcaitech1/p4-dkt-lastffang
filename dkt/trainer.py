@@ -39,7 +39,8 @@ def run(args, train_data, valid_data):
 
         ### TODO: model save or early stopping
         wandb.log({"epoch": epoch, "train_loss": train_loss, "train_auc": train_auc, "train_acc":train_acc,
-                  "valid_auc":auc, "valid_acc":acc, "val_loss":val_loss})
+                  "valid_auc":auc, "valid_acc":acc, "val_loss":val_loss, "learning_rate": scheduler.get_last_lr()[0]})
+
         if auc > best_auc:
             best_auc = auc
             # torch.nn.DataParallel로 감싸진 경우 원래의 model을 가져옵니다.
