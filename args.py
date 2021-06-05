@@ -73,10 +73,6 @@ def parse_args(mode):
     parser.add_argument('--scheduler', default='plateau', type=str, choices=choices["scheduler_options"], help='scheduler type')
     parser.add_argument('--criterion', default='BCE', type=str, choices=choices["criterion_options"], help='criterion type')
 
-    # cv
-    # parser.add_argument('--kfold_num', default=5, type=int, help='number of folds')
-    parser.add_argument('--augmentation', default=False, action='store_true', help='train data augmentation option')
-
     args = parser.parse_args()
 
     return args
