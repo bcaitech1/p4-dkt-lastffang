@@ -324,7 +324,7 @@ class LastQuery(nn.Module):
         self.value = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)
 
         self.attn = nn.MultiheadAttention(embed_dim=self.hidden_dim, num_heads=self.args.n_heads)
-        self.mask = None # last query에서는 필요가 없지만 수정을 고려하여서 넣어둠
+        self.mask = None
         self.ffn = Feed_Forward_block(self.hidden_dim)
 
         self.ln1 = nn.LayerNorm(self.hidden_dim)
