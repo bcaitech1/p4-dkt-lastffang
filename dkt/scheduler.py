@@ -14,6 +14,6 @@ def get_scheduler(optimizer, args):
     elif args.scheduler == 'cosine_annealing':
         scheduler = CosineAnnealingLR(optimizer, T_max=args.t_max, eta_min=args.eta_min)
     elif args.scheduler == 'cosine_annealing_warmstart':
-        scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=args.T_0, T_mult=1, eta_min=args.eta_min, last_epoch=-1)
+        scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=args.T_0, T_mult=args.T_mult, eta_min=args.eta_min, last_epoch=-1)
 
     return scheduler
