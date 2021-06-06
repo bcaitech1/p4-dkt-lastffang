@@ -26,7 +26,7 @@ def parse_args(mode):
 
     parser.add_argument('--train_file_to_load', default='train_data.csv', type=str, help='train file name to load')
     parser.add_argument('--do_train_feature_engineering', default='True', type=str2bool, help='whether do feature engineering or not')
-    parser.add_argument('--train_file_to_write', default='train_data_new2.csv', type=str, help='new train file name to write')
+    parser.add_argument('--train_file_to_write', default='train_data_new1.csv', type=str, help='new train file name to write')
 
     parser.add_argument('--model_dir', default='models/', type=str, help='model directory')
     parser.add_argument('--model_name', default='model.pt', type=str, help='model file name')
