@@ -205,7 +205,7 @@ class Preprocess:
 
         # print(self.args.cate_len)
         # exit()
-        
+
         df = df.sort_values(by=['userID', 'Timestamp'], axis=0)
         columns = ['userID'] + self.args.cate_cols + self.args.cont_cols
 
