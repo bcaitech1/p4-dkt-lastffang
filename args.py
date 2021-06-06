@@ -39,8 +39,8 @@ def parse_args(mode):
 
     # wandb
     if mode == 'train':
-        parser.add_argument('--prefix', default='jh',  type=str, help='prefix of wandb run name (e.g. username or initials).')
-        parser.add_argument('--run_name', default='baseline', type=str, help='wandb run name. Defaults to current time')
+        parser.add_argument('--prefix', default='jh', required=True, type=str, help='prefix of wandb run name (e.g. username or initials).')
+        parser.add_argument('--run_name', default='test', type=str, help='wandb run name. Defaults to current time')
 
     # 모델
     parser.add_argument('--hidden_dim', default=64, type=int, help='hidden dimension size')
