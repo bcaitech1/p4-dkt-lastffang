@@ -78,7 +78,7 @@ def main(args):
             start += interval
             every_fold_preds = inferenceForCV(best_model, cv_count, every_fold_preds)
             auc_avg += best_auc
-        auc_avg /= 5
+        auc_avg /= k
         print("*" * 50, 'auc_avg', "*" * 50)
         print(auc_avg)
 
