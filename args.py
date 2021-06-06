@@ -57,7 +57,7 @@ def parse_args(mode):
     parser.add_argument('--momentum', default=0.9, type=float, help="momentum for SGD")
 
     # Scheduler
-    parser.add_argument('--scheduler', default='cosine_annealing_warmstart', type=str, choices=choices["scheduler_options"], help='scheduler type')
+    parser.add_argument('--scheduler', default='plateau', type=str, choices=choices["scheduler_options"], help='scheduler type')
 
     # Scheduler-parameters
     #plateau
