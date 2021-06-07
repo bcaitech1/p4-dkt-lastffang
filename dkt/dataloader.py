@@ -27,7 +27,7 @@ class Preprocess:
         split data into two parts with a given ratio.
         """
         if shuffle:
-            random.seed(seed)  # fix to default seed 0
+            random.seed(seed) # fix to default seed 0
             random.shuffle(data)
 
         data_1 = np.append(data[:start],data[start+interval:])
@@ -178,7 +178,7 @@ class Preprocess:
         # if is_train:
         self.args.cont_cols.extend(
             ['answer_mean', 'assessment_category_mean', 'knowledge_tag_mean', 'testId_answer_rate',
-            'assessmentItemID_answer_rate', 'elapsed_time', 'user_total_acc', 'et_by_kt', 'et_by_as','answer_mean_max'])
+             'assessmentItemID_answer_rate', 'elapsed_time', 'user_total_acc', 'et_by_kt', 'et_by_as','answer_mean_max'])
         self.args.cate_cols.extend(['assessment_category'])
 
         df = self.__preprocessing(df, is_train)

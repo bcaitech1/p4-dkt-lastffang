@@ -63,8 +63,7 @@ def main(args):
     if not args.run_name:
         args.run_name = datetime.now(timezone("Asia/Seoul")).strftime("%Y-%m-%d-%H:%M:%S")
 
-    # wandb.init(project='p-stage-4', entity='lastffang', name='-'.join([args.prefix, args.run_name]), config=vars(args))
-    wandb.init(project='dkt', name='-'.join([args.prefix, args.run_name]), config=vars(args))
+    wandb.init(project='p-stage-4', entity='lastffang', name='-'.join([args.prefix, args.run_name]), config=vars(args))
     
     k = args.kfold_num
     interval = len(train_data_origin) // k

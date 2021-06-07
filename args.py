@@ -24,10 +24,9 @@ def parse_args(mode):
     parser.add_argument('--data_dir', default='/opt/ml/input/data/train_dataset', type=str, help='data directory')
     parser.add_argument('--asset_dir', default='asset/', type=str, help='data directory')
 
-    parser.add_argument('--train_file_to_load', default='train_data_new1.csv', type=str, help='train file name to load')
-    parser.add_argument('--do_train_feature_engineering', default='False', type=str2bool, help='whether do feature engineering or not')
+    parser.add_argument('--train_file_to_load', default='train_data.csv', type=str, help='train file name to load')
+    parser.add_argument('--do_train_feature_engineering', default='True', type=str2bool, help='whether do feature engineering or not')
     parser.add_argument('--train_file_to_write', default='train_data_new1.csv', type=str, help='new train file name to write')
-
 
     parser.add_argument('--model_dir', default='models/', type=str, help='model directory')
     parser.add_argument('--model_name', default='model.pt', type=str, help='model file name')
@@ -98,10 +97,6 @@ def parse_args(mode):
     ### 중요 ###
     parser.add_argument('--model', default='lstmattn', type=str, choices=choices["model_options"], help='model type')
     parser.add_argument('--criterion', default='BCE', type=str, choices=choices["criterion_options"], help='criterion type')
-
-    # cv
-    # parser.add_argument('--kfold_num', default=5, type=int, help='number of folds')
-    parser.add_argument('--augmentation', default=False, action='store_true', help='train data augmentation option')
 
     args = parser.parse_args()
 
