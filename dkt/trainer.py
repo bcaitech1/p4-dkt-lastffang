@@ -13,6 +13,7 @@ import wandb
 
 
 def run(args, train_data, valid_data, cv_count=0):
+
     train_loader, valid_loader = get_loaders(args, train_data, valid_data)
 
     # only when using warmup scheduler
@@ -39,8 +40,13 @@ def run(args, train_data, valid_data, cv_count=0):
         auc, acc, _, _, val_loss = validate(valid_loader, model, args)
 
         ### TODO: model save or early stopping
+        if args.scheduler == 'plateau':
+            last_lr = optimizer.param_groups[0]['lr']
+        else:
+            last_lr = scheduler.get_last_lr()[0]
+
         wandb.log({"epoch": epoch, "train_loss": train_loss, "train_auc": train_auc, "train_acc":train_acc,
-                  "valid_auc":auc, "valid_acc":acc, "val_loss":val_loss})
+                  "valid_auc":auc, "valid_acc":acc, "val_loss":val_loss, "learning_rate": last_lr})
 
         if auc > best_auc:
             best_auc = auc
@@ -160,7 +166,8 @@ def validate(valid_loader, model, args):
     loss_avg = sum(losses) / len(losses)
     print(f'VALID AUC : {auc} ACC : {acc}\n')
 
-    return auc, acc, total_preds, total_targets, loss_avg
+    return auc, acc, total_preds, total_targets,loss_avg
+
 
 def inference(args, test_data, model=None):
     if model:
