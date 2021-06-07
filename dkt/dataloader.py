@@ -175,7 +175,6 @@ class Preprocess:
             df = self.__add_confirmed_continuous_features(df)
 
         # 사용하고자 하는 features를 아래에 작성하면 됨 #
-        # if is_train:
         self.args.cont_cols.extend(
             ['answer_mean', 'assessment_category_mean', 'knowledge_tag_mean', 'testId_answer_rate',
              'assessmentItemID_answer_rate', 'elapsed_time', 'user_total_acc', 'et_by_kt', 'et_by_as','answer_mean_max'])
