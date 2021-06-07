@@ -85,6 +85,13 @@ def parse_args(mode):
     parser.add_argument('--clip_grad', default=10, type=int, help='clip grad')
     parser.add_argument('--patience', default=10, type=int, help='for early stopping')
 
+    parser.add_argument('--warmup_ratio', default=0.1, type=float, help='warmup step ratio')
+
+    # cv
+    parser.add_argument('--kfold_num', default=5, type=int, help='number of fold')
+    parser.add_argument('--do_CV', action='store_true', help='do cross validation or not')
+
+
     parser.add_argument('--log_steps', default=50, type=int, help='print log per n steps')
 
 

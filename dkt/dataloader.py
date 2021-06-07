@@ -22,17 +22,16 @@ class Preprocess:
     def get_test_data(self):
         return self.test_data
 
-    def split_data(self, data, ratio=0.7, shuffle=True, seed=0):
+    def split_data(self, data, start, interval, shuffle=True, seed=0):
         """
         split data into two parts with a given ratio.
         """
         if shuffle:
-            random.seed(seed)  # fix to default seed 0
+            random.seed(seed) # fix to default seed 0
             random.shuffle(data)
 
-        size = int(len(data) * ratio)
-        data_1 = data[:size]
-        data_2 = data[size:]
+        data_1 = np.append(data[:start],data[start+interval:])
+        data_2 = data[start:start+interval]
 
         return data_1, data_2
 

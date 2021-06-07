@@ -120,6 +120,7 @@ class LSTM(nn.Module):
         mask = input[-1]
 
         # Embedding
+
         embed = forward_layers(self.args, input, self.cate_embedding_layers, self.cont_embedding_layers)
 
         X = self.comb_proj(embed)
