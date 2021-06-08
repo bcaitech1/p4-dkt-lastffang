@@ -75,7 +75,7 @@ def parse_args(mode):
     parser.add_argument('--criterion', default='BCE', type=str, choices=choices["criterion_options"], help='criterion type')
 
     # aumentation option
-    parser.add_argument('--augmentation', default=False, action='store_true', help='')
+    parser.add_argument('--augmentation', default='False', type=str2bool, help='whether do augment data or not')
     parser.add_argument('--aug_shuffle_n', default=0, type=int, help='')
 
     args = parser.parse_args()
