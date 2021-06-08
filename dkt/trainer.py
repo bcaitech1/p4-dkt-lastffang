@@ -106,7 +106,6 @@ def run(args, train_data, valid_data, cv_count=0):
         train_auc, train_acc, train_loss = train(train_loader, model, optimizer, args)
 
         ### VALID
-
         auc, acc, _, _, val_loss = validate(valid_loader, model, args)
 
         ### TODO: model save or early stopping
@@ -154,7 +153,7 @@ def train(train_loader, model, optimizer, args):
         input = process_batch(batch, args)
         '''
         input 순서는 category + continuous + mask
-
+        
         'answerCode', 'interaction', 'assessmentItemID', 'testId', 'KnowledgeTag', + 추가 category
         + 추가 cont
         + 'mask'
@@ -203,7 +202,7 @@ def validate(valid_loader, model, args):
         input = process_batch(batch, args)
         '''
         input 순서는 category + continuous + mask
-
+        
         'answerCode', 'interaction', 'assessmentItemID', 'testId', 'KnowledgeTag', + 추가 category
         + 추가 cont
         + 'mask'
@@ -212,7 +211,6 @@ def validate(valid_loader, model, args):
         preds = model(input)
         targets = input[0] # correct
         loss = compute_loss(preds, targets, args)
-
         # predictions
         preds = preds[:, -1]
         targets = targets[:, -1]
@@ -236,7 +234,7 @@ def validate(valid_loader, model, args):
     loss_avg = sum(losses) / len(losses)
     print(f'VALID AUC : {auc} ACC : {acc}\n')
 
-    return auc, acc, total_preds, total_targets,loss_avg
+    return auc, acc, total_preds, total_targets, loss_avg
 
 
 def inference(args, test_data, model=None):
@@ -309,11 +307,9 @@ def get_model(args):
 def process_batch(batch, args):
     '''
     batch 순서는 category + continuous + mask
-
     'answerCode', 'assessmentItemID', 'testId', 'KnowledgeTag', + 추가 category
     + 추가 cont
     + 'mask'
-
     원래코드
     # test, question, tag, correct, mask = batch
     '''
@@ -334,7 +330,6 @@ def process_batch(batch, args):
             interaction
             interaction을 임시적으로 correct를 한칸 우측으로 이동한 것으로 사용
             saint의 경우 decoder에 들어가는 input이다
-
             오피스아워에서 언급한 코드 수정내용 반영
             '''
 
@@ -348,7 +343,6 @@ def process_batch(batch, args):
         else:
             '''
             일반 category
-
             원래 코드
             test = ((test + 1) * mask).to(torch.int64)
             question = ((question + 1) * mask).to(torch.int64)
@@ -366,7 +360,6 @@ def process_batch(batch, args):
 
     '''
     device memory로 이동
-
     원래 코드
     test = test.to(args.device)
     question = question.to(args.device)
