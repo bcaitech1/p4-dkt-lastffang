@@ -7,13 +7,83 @@ from .optimizer import get_optimizer
 from .scheduler import get_scheduler
 from .criterion import get_criterion
 from .metric import get_metric
-from .model import LSTM,  LastQuery, RNNATTN, Bert
+from .model import LSTM, LastQuery, RNNATTN, Bert
 
 import wandb
 
+def slidding_window(data, args):
+    window_size = args.max_seq_len
+    stride = args.stride
+
+    augmented_datas = []
+    for row in data:
+        seq_len = len(row[0])
+
+        # 만약 window 크기보다 seq len이 같거나 작으면 augmentation을 하지 않는다
+        if seq_len <= window_size:
+            augmented_datas.append(row)
+        else:
+            total_window = ((seq_len - window_size) // stride) + 1
+            
+            # 앞에서부터 slidding window 적용
+            for window_i in range(total_window):
+                # window로 잘린 데이터를 모으는 리스트
+                window_data = []
+                for col in row:
+                    window_data.append(col[window_i*stride:window_i*stride + window_size])
+
+                # Shuffle
+                # 마지막 데이터의 경우 shuffle을 하지 않는다
+                if args.aug_shuffle_n > 0 and window_i + 1 != total_window:
+                    shuffle_datas = shuffle(window_data, window_size, args)
+                    augmented_datas += shuffle_datas
+                else:
+                    augmented_datas.append(tuple(window_data))
+
+            # slidding window에서 뒷부분이 누락될 경우 추가
+            total_len = window_size + (stride * (total_window - 1))
+            if seq_len != total_len:
+                window_data = []
+                for col in row:
+                    window_data.append(col[-window_size:])
+                augmented_datas.append(tuple(window_data))
+
+
+    return augmented_datas
+
+def shuffle(data, data_size, args):
+    shuffle_datas = []
+    shuffle_datas.append(data)
+    for i in range(args.aug_shuffle_n):
+        # shuffle 횟수만큼 window를 랜덤하게 계속 섞어서 데이터로 추가
+        shuffle_data = []
+        random_index = np.random.permutation(data_size)
+        for col in data:
+            shuffle_data.append(col[random_index])
+        shuffle_datas.append(tuple(shuffle_data))
+    return shuffle_datas
+        
+def data_augmentation(data, args):
+    if args.window == True:
+        data = slidding_window(data, args)
+
+    return data
 
 def run(args, train_data, valid_data, cv_count=0):
-
+    '''
+    #TODO
+    max_seq_len까지만 사용, 나머지는 버리는데 이부분에서 data augmentation 필요
+    '''
+    
+    # augmentation
+    if args.augmentation:
+        args.window = True
+        args.stride = args.max_seq_len
+        augmented_train_data = data_augmentation(train_data, args)
+        if len(augmented_train_data) != len(train_data):
+            print(f"Data Augmentation applied. Train data {len(train_data)} -> {len(augmented_train_data)}\n")
+            train_data = augmented_train_data
+            
     train_loader, valid_loader = get_loaders(args, train_data, valid_data)
 
     # only when using warmup scheduler
@@ -83,8 +153,9 @@ def train(train_loader, model, optimizer, args):
         input = process_batch(batch, args)
         '''
         input 순서는 category + continuous + mask
+        
         'answerCode', 'interaction', 'assessmentItemID', 'testId', 'KnowledgeTag', + 추가 category
-        + 추가 num
+        + 추가 cont
         + 'mask'
         '''
 
@@ -103,7 +174,7 @@ def train(train_loader, model, optimizer, args):
         if args.device == 'cuda':
             preds = preds.to('cpu').detach().numpy()
             targets = targets.to('cpu').detach().numpy()
-        else:  # cpu
+        else: # cpu
             preds = preds.detach().numpy()
             targets = targets.detach().numpy()
 
@@ -131,8 +202,9 @@ def validate(valid_loader, model, args):
         input = process_batch(batch, args)
         '''
         input 순서는 category + continuous + mask
+        
         'answerCode', 'interaction', 'assessmentItemID', 'testId', 'KnowledgeTag', + 추가 category
-        + 추가 num
+        + 추가 cont
         + 'mask'
         '''
 
@@ -236,7 +308,7 @@ def process_batch(batch, args):
     '''
     batch 순서는 category + continuous + mask
     'answerCode', 'assessmentItemID', 'testId', 'KnowledgeTag', + 추가 category
-    + 추가 num
+    + 추가 cont
     + 'mask'
     원래코드
     # test, question, tag, correct, mask = batch
