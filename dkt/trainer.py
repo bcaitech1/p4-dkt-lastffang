@@ -34,7 +34,7 @@ def run(args, train_data, valid_data, cv_count=0):
         if not args.cv_strategy:
             model_name = args.model_name
         else:
-            model_name = f"{args.model_name.split('.pt')[0]}_{cv_count + 1}.pt"
+            model_name = f"{args.model_name.split('.pt')[0]}_{cv_count}.pt"
 
         ### TRAIN
         train_auc, train_acc, train_loss = train(train_loader, model, optimizer, args)
