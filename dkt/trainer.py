@@ -8,6 +8,7 @@ from .scheduler import get_scheduler
 from .criterion import get_criterion
 from .metric import get_metric
 from .model import LSTM,  LastQuery, RNNATTN, Bert
+from dkt.utils import setSeeds
 
 import wandb
 
@@ -30,7 +31,10 @@ def run(args, train_data, valid_data, cv_count=0):
 
         print(f"Start Training: Epoch {epoch + 1}")
 
-        model_name = 'model' + str(cv_count) + '.pt'
+        if not args.cv_strategy:
+            model_name = args.model_name
+        else:
+            model_name = f"{args.model_name.split('.pt')[0]}_{cv_count + 1}.pt"
 
         ### TRAIN
         train_auc, train_acc, train_loss = train(train_loader, model, optimizer, args)
@@ -70,7 +74,7 @@ def run(args, train_data, valid_data, cv_count=0):
         else:
             scheduler.step()
 
-    return model_to_save, best_auc
+    return best_auc
 
 
 def train(train_loader, model, optimizer, args):
@@ -164,31 +168,17 @@ def validate(valid_loader, model, args):
 
     return auc, acc, total_preds, total_targets, loss_avg
 
+def inference(args, test_data):
+    ckpt_file_names = []
+    all_fold_preds = []
 
-def inference(args, test_data, model=None):
-    if model:
-        model.eval()
-        _, test_loader = get_loaders(args, None, test_data)
-
-        total_preds = []
-
-        for step, batch in enumerate(test_loader):
-            input = process_batch(batch, args)
-            preds = model(input)
-            # predictions
-            preds = preds[:, -1]
-
-            if args.device == 'cuda':
-                preds = preds.to('cpu').detach().numpy()
-            else:  # cpu
-                preds = preds.detach().numpy()
-
-            total_preds += list(preds)
-
-        return total_preds
-
+    if not args.cv_strategy:
+        ckpt_file_names = [args.model_name]
     else:
-        model = load_model(args)
+        ckpt_file_names = [f"{args.model_name.split('.pt')[0]}_{i + 1}.pt" for i in range(args.kfold_num)]
+
+    for fold_idx, ckpt in enumerate(ckpt_file_names):
+        model = load_model(args, ckpt)
         model.eval()
         _, test_loader = get_loaders(args, None, test_data)
 
@@ -207,20 +197,38 @@ def inference(args, test_data, model=None):
 
             total_preds += list(preds)
 
-        write_path = os.path.join(args.output_dir, 'output.csv')
+        all_fold_preds.append(total_preds)
+
+        output_file_name = "output.csv" if not args.cv_strategy else f"output_{fold_idx + 1}.csv"
+        write_path = os.path.join(args.output_dir, output_file_name)
         if not os.path.exists(args.output_dir):
             os.makedirs(args.output_dir)
         with open(write_path, 'w', encoding='utf8') as w:
             print("writing prediction : {}".format(write_path))
             w.write("id,prediction\n")
             for id, p in enumerate(total_preds):
-                w.write('{},{}\n'.format(id, p))
+                w.write('{},{}\n'.format(id,p))
+
+    if len(all_fold_preds) > 1:
+        # Soft voting ensemble
+        votes = np.sum(all_fold_preds, axis=0) / len(all_fold_preds)
+
+        write_path = os.path.join(args.output_dir, "output_softvote.csv")
+        if not os.path.exists(args.output_dir):
+            os.makedirs(args.output_dir)
+        with open(write_path, 'w', encoding='utf8') as w:
+            print("writing prediction : {}".format(write_path))
+            w.write("id,prediction\n")
+            for id, p in enumerate(votes):
+                w.write('{},{}\n'.format(id,p))
 
 
 def get_model(args):
     """
     Load model and move tensors to a given devices.
     """
+    setSeeds(args.seed)
+
     if args.model == 'lstm': model = LSTM(args)
     if args.model == 'lstmattn' or args.model == 'gruattn': model = RNNATTN(args)
     if args.model == 'bert': model = Bert(args)
@@ -335,8 +343,9 @@ def save_checkpoint(state, model_dir, model_filename):
     torch.save(state, os.path.join(model_dir, model_filename))
 
 
-def load_model(args, cv_num=0):
-    model_name = 'model.pt'
+def load_model(args, model_name=None):
+    if not model_name:
+        model_name = args.model_name
     model_path = os.path.join(args.model_dir, model_name)
     print("Loading Model from:", model_path)
     load_state = torch.load(model_path)
