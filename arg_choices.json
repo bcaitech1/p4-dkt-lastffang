@@ -2,5 +2,6 @@
     "model_options" : ["lstm", "lstmattn", "gruattn", "bert", "lqtrnn"],
     "scheduler_options" : ["plateau", "linear_warmup"],
     "optimizer_options" : ["adam", "adamW", "adamP"],
-    "criterion_options" : ["BCE"]
+    "criterion_options" : ["BCE"],
+    "cv_options" : ["random", "stratified"]
 }
