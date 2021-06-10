@@ -240,7 +240,11 @@ class Preprocess:
                 )
             )
         '''
-        group = df[columns].groupby('userID').apply(
+        '''
+        새로 만든 train.csv, test.csv 반드시 사용!
+        
+        '''
+        group = df[columns].groupby('UID').apply(
             lambda x: tuple([x[col].values for col in self.args.cate_cols + self.args.cont_cols]))
 
         return group.values
