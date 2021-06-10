@@ -240,7 +240,7 @@ def validate(valid_loader, model, args):
 def inference(args, test_data, model=None):
     if model:
         model.eval()
-        _, test_loader = get_loaders(args, None, test_data)
+        _, test_loader = get_loaders(args, None, test_data, True)
 
         total_preds = []
 

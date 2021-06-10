@@ -90,6 +90,9 @@ def parse_args(mode):
 
     parser.add_argument('--log_steps', default=50, type=int, help='print log per n steps')
 
+    #sampling
+    parser.add_argument('--reservoir_sampling', default='False', type=str2bool, help='whether do reservoir sampling or not')
+
     ### 중요 ###
     parser.add_argument('--model', default='lstmattn', type=str, choices=choices["model_options"], help='model type')
     parser.add_argument('--criterion', default='BCE', type=str, choices=choices["criterion_options"], help='criterion type')
