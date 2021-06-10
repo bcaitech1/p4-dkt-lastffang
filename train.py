@@ -56,6 +56,11 @@ def main(args):
     args.cont_cols = []
     args.auc_avg = 0
 
+    if args.criterion=="UID":
+        args.train_file_to_load='train_uid.csv'
+        args.train_file_to_write='train_uid_new.csv'
+        args.test_file_name='test_uid.csv'
+
     preprocess = Preprocess(args)
     preprocess.load_train_data(args.train_file_to_load)
     train_data_origin = preprocess.get_train_data()

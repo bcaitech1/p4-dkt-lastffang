@@ -17,7 +17,10 @@ def main(args):
     args.cate_cols = ['answerCode', 'testId', 'assessmentItemID', 'KnowledgeTag']
     args.cont_cols = []
     
-    
+    if args.criterion=="UID":
+        args.train_file_to_load='train_uid.csv'
+        args.train_file_to_write='train_uid_new.csv'
+        args.test_file_name='test_uid.csv'
     preprocess = Preprocess(args)
     preprocess.load_test_data(args.test_file_name)
     test_data = preprocess.get_test_data()
