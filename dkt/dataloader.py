@@ -224,7 +224,7 @@ class Preprocess:
         # exit()
         
         df = df.sort_values(by=['userID', 'Timestamp'], axis=0)
-        columns = ['userID'] + self.args.cate_cols + self.args.cont_cols
+        columns = ['userID','UID'] + self.args.cate_cols + self.args.cont_cols
 
         '''
         df에서 카테고리 데이터를 label encoding한 내용으로 변환
