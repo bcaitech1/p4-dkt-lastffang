@@ -18,7 +18,6 @@ def inferenceForCV(model, cv_count, every_fold_preds):
     '''
     args.cate_cols = ['answerCode', 'testId', 'assessmentItemID', 'KnowledgeTag']
     args.cont_cols = []
-    args.auc_avg
     preprocess = Preprocess(args)
     preprocess.load_test_data(args.test_file_name)
     test_data = preprocess.get_test_data()
