@@ -18,7 +18,7 @@ def inferenceForCV(model, cv_count, every_fold_preds):
     '''
     args.cate_cols = ['answerCode', 'testId', 'assessmentItemID', 'KnowledgeTag']
     args.cont_cols = []
-
+    args.auc_avg
     preprocess = Preprocess(args)
     preprocess.load_test_data(args.test_file_name)
     test_data = preprocess.get_test_data()
@@ -55,6 +55,7 @@ def main(args):
     '''
     args.cate_cols = ['answerCode', 'testId', 'assessmentItemID', 'KnowledgeTag']
     args.cont_cols = []
+    args.auc_avg = 0
 
     preprocess = Preprocess(args)
     preprocess.load_train_data(args.train_file_to_load)
@@ -64,23 +65,22 @@ def main(args):
         args.run_name = datetime.now(timezone("Asia/Seoul")).strftime("%Y-%m-%d-%H:%M:%S")
 
     wandb.init(project='p-stage-4', entity='lastffang', name='-'.join([args.prefix, args.run_name]), config=vars(args))
-    
     k = args.kfold_num
     interval = len(train_data_origin) // k
     start = 0
 
     if args.do_CV == True:
         every_fold_preds = [0 for _ in range(744)]
-        auc_avg = 0
+        args.auc_avg = 0
         for cv_count in range(1, k + 1):
             train_data, valid_data = preprocess.split_data(train_data_origin, start, interval, shuffle=True)
             best_model, best_auc = trainer.run(args, train_data, valid_data, cv_count)
             start += interval
             every_fold_preds = inferenceForCV(best_model, cv_count, every_fold_preds)
-            auc_avg += best_auc
-        auc_avg /= k
+            args.auc_avg += best_auc
+        args.auc_avg /= k
         print("*" * 50, 'auc_avg', "*" * 50)
-        print(auc_avg)
+        print(args.auc_avg)
 
     else:
         train_data, valid_data = preprocess.split_data(train_data_origin, start, interval, shuffle=True, seed=args.seed)

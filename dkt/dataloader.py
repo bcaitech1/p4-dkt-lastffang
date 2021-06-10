@@ -8,6 +8,25 @@ from sklearn.preprocessing import LabelEncoder
 import numpy as np
 import torch
 from torch.nn.utils.rnn import pad_sequence
+import random
+
+def random_subset( iterator, K ):
+    result = []
+    index = []
+    N = 0
+
+    for i, item in enumerate(iterator):
+        N += 1
+        if len(result) < K:
+            result.append(item)
+            index.append(i)
+        else:
+            s = int(random.random() * N)
+            if s < K:
+                result[s] = item
+                index[s] = i
+
+    return result, index
 
 
 class Preprocess:
@@ -138,7 +157,6 @@ class Preprocess:
         df['answer_mean_max'] = df.groupby(['userID'])['answer_mean'].agg('max')
         df['answer_mean_max'] = df['answer_mean_max'].fillna(float(1))
 
-
         return df
 
     # 원하는 categorical feature 추가
@@ -235,9 +253,10 @@ class Preprocess:
 
 
 class DKTDataset(torch.utils.data.Dataset):
-    def __init__(self, data, args):
+    def __init__(self, data, args,is_inference=False):
         self.data = data
         self.args = args
+        self.is_inference=is_inference
 
     def __getitem__(self, index):
         # category, numeric
@@ -259,13 +278,34 @@ class DKTDataset(torch.utils.data.Dataset):
         '''
 
         # max seq len을 고려하여서 이보다 길면 자르고 아닐 경우 그대로 냅둔다
-        if seq_len > self.args.max_seq_len:
-            for i, col in enumerate(cate_cols):
-                cate_cols[i] = col[-self.args.max_seq_len:]
-            mask = np.ones(self.args.max_seq_len, dtype=np.int16)
+
+        if self.args.reservoir_sampling:
+            if seq_len > self.args.max_seq_len:
+                if not self.is_inference:
+                    for i, col in enumerate(cate_cols):
+                        if i == 0:
+                            cate_cols[i],index = random_subset(col, self.args.max_seq_len)
+                        else:
+                            temp = []
+                            for j in index:
+                                temp.append(col[j])
+                            cate_cols[i]=temp
+                else:
+                    for i, col in enumerate(cate_cols):
+                        cate_cols[i] = col[-self.args.max_seq_len:]
+                mask = np.ones(self.args.max_seq_len, dtype=np.int16)
+            else:
+                mask = np.zeros(self.args.max_seq_len, dtype=np.int16)
+                mask[-seq_len:] = 1
+
         else:
-            mask = np.zeros(self.args.max_seq_len, dtype=np.int16)
-            mask[-seq_len:] = 1
+            if seq_len > self.args.max_seq_len:
+                for i, col in enumerate(cate_cols):
+                    cate_cols[i] = col[-self.args.max_seq_len:]
+                mask = np.ones(self.args.max_seq_len, dtype=np.int16)
+            else:
+                mask = np.zeros(self.args.max_seq_len, dtype=np.int16)
+                mask[-seq_len:] = 1
 
         # mask도 columns 목록에 포함시킴
         cate_cols.append(mask)
@@ -299,7 +339,7 @@ def collate(batch):
     return tuple(col_list)
 
 
-def get_loaders(args, train, valid):
+def get_loaders(args, train, valid,is_inference=False):
     pin_memory = True
     train_loader, valid_loader = None, None
 
@@ -309,7 +349,7 @@ def get_loaders(args, train, valid):
                                                    batch_size=args.batch_size, pin_memory=pin_memory,
                                                    collate_fn=collate)
     if valid is not None:
-        valset = DKTDataset(valid, args)
+        valset = DKTDataset(valid, args,is_inference)
         valid_loader = torch.utils.data.DataLoader(valset, num_workers=args.num_workers, shuffle=False,
                                                    batch_size=args.batch_size, pin_memory=pin_memory,
                                                    collate_fn=collate)
