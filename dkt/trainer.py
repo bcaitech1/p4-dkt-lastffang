@@ -252,7 +252,7 @@ def inference(args, test_data):
     for fold_idx, ckpt in enumerate(ckpt_file_names):
         model = load_model(args, ckpt)
         model.eval()
-        _, test_loader = get_loaders(args, None, test_data)
+        _, test_loader = get_loaders(args, None, test_data, True)
 
         total_preds = []
 

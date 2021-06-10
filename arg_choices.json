@@ -1,7 +1,7 @@
 {
     "model_options" : ["lstm", "lstmattn", "gruattn", "bert", "lqtrnn"],
-    "scheduler_options" : ["plateau", "linear_warmup"],
-    "optimizer_options" : ["adam", "adamW", "adamP"],
+    "scheduler_options" : ["plateau", "linear_warmup","step_lr","exp_lr","cosine_annealing","cosine_annealing_warmstart"],
+    "optimizer_options" : ["adam", "adamW", "adamP","SGD"],
     "criterion_options" : ["BCE", "BCELogit", "MSE", "L1"],
     "cv_options" : ["random", "stratified"]
 }

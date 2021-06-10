@@ -23,6 +23,7 @@ def main(args):
     '''
     args.cate_cols = ['answerCode', 'testId', 'assessmentItemID', 'KnowledgeTag']
     args.cont_cols = []
+    args.auc_avg = 0
 
     preprocess = Preprocess(args)
     preprocess.load_train_data(args.train_file_to_load)
@@ -58,8 +59,9 @@ def main(args):
 
     if args.cv_strategy:
         auc_avg /= k
+
         print("*" * 50, 'auc_avg', "*" * 50)
-        print(auc_avg)
+        print(args.auc_avg)
 
 
 if __name__ == "__main__":
