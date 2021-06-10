@@ -15,11 +15,12 @@ def init_layers(args):
 
     for cate_col in args.cate_cols:
         cate_embedding_layers[cate_col] = \
-            nn.Embedding(args.cate_len[cate_col] + 1, args.hidden_dim//3).to(args.device) if cate_col != 'answerCode' \
-            else nn.Embedding(args.cate_len[cate_col], args.hidden_dim//3).to(args.device)
+                nn.Embedding(args.cate_len[cate_col] + 1, args.hidden_dim//3).to(args.device) if cate_col != 'answerCode' \
+                else nn.Embedding(args.cate_len[cate_col], args.hidden_dim//3).to(args.device)
 
     for cont_col in args.cont_cols:
-        cont_embedding_layers[cont_col] = nn.Linear(1, args.hidden_dim//3).to(args.device)
+        cont_embedding_layers[cont_col] = \
+                nn.Linear(1, args.hidden_dim//3).to(args.device)
 
     # embedding combination projection
     comb_proj = nn.Linear((args.hidden_dim//3)*((len(args.cont_cols) + len(args.cate_cols))), args.hidden_dim)
@@ -120,6 +121,7 @@ class LSTM(nn.Module):
         mask = input[-1]
 
         # Embedding
+
         embed = forward_layers(self.args, input, self.cate_embedding_layers, self.cont_embedding_layers)
 
         X = self.comb_proj(embed)

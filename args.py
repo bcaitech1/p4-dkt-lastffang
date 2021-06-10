@@ -77,7 +77,6 @@ def parse_args(mode):
     parser.add_argument('--step_size', default=50, type=int, help='step LR scheduler: step size')
     parser.add_argument('--gamma', default=0.1, type=float, help='step LR scheduler: gamma')
 
-
     # 훈련
     parser.add_argument('--n_epochs', default=100, type=int, help='number of epochs')
     parser.add_argument('--batch_size', default=64, type=int, help='batch size')
@@ -85,13 +84,19 @@ def parse_args(mode):
     parser.add_argument('--clip_grad', default=10, type=int, help='clip grad')
     parser.add_argument('--patience', default=10, type=int, help='for early stopping')
 
+    # cv
+    parser.add_argument('--kfold_num', default=5, type=int, help='number of fold')
+    parser.add_argument('--do_CV', default='False', type=str2bool, help='whether do cross validation or not')
+
     parser.add_argument('--log_steps', default=50, type=int, help='print log per n steps')
-
-
 
     ### 중요 ###
     parser.add_argument('--model', default='lstmattn', type=str, choices=choices["model_options"], help='model type')
     parser.add_argument('--criterion', default='BCE', type=str, choices=choices["criterion_options"], help='criterion type')
+
+    # aumentation option
+    parser.add_argument('--augmentation', default='False', type=str2bool, help='whether do augment data or not')
+    parser.add_argument('--aug_shuffle_n', default=0, type=int, help='')
 
     args = parser.parse_args()
 
