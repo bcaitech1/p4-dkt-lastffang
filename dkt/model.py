@@ -13,6 +13,8 @@ except:
 def init_layers(args):
     cate_embedding_layers, cont_embedding_layers = {}, {}
 
+    answer_embedding_layer = nn.Embedding(3, args.hidden_dim//2).to(args.device)
+
     for cate_col in args.cate_cols:
         cate_embedding_layers[cate_col] = \
                 nn.Embedding(args.cate_len[cate_col] + 1, args.hidden_dim//3).to(args.device) if cate_col != 'answerCode' \
@@ -23,12 +25,13 @@ def init_layers(args):
                 nn.Linear(1, args.hidden_dim//3).to(args.device)
 
     # embedding combination projection
-    comb_proj = nn.Linear((args.hidden_dim//3)*((len(args.cont_cols) + len(args.cate_cols))), args.hidden_dim)
+    comb_proj = nn.Linear((args.hidden_dim//3)*((len(args.cont_cols) + len(args.cate_cols)-1)), args.hidden_dim//2)
+    comb_proj_2 = nn.Linear(args.hidden_dim, args.hidden_dim)
 
-    return cate_embedding_layers, cont_embedding_layers, comb_proj
+    return cate_embedding_layers, cont_embedding_layers, answer_embedding_layer, comb_proj, comb_proj_2
 
 
-def forward_layers(args, input, cate_embedding_layers, cont_embedding_layers):
+def forward_layers(args, input, cate_embedding_layers, cont_embedding_layers, answer_embedding_layer):
 
     '''
     input 순서는 category + continuous + mask
@@ -39,7 +42,8 @@ def forward_layers(args, input, cate_embedding_layers, cont_embedding_layers):
     test, question, tag, _, mask, interaction = input
     '''
 
-    cate_inputs = input[1:len(args.cate_cols)+1]
+    interaction = input[1]
+    cate_inputs = input[2:len(args.cate_cols)+1]
     cont_inputs = input[len(args.cate_cols)+1:len(args.cate_cols)+len(args.cont_cols)+1]
 
     '''
@@ -51,9 +55,11 @@ def forward_layers(args, input, cate_embedding_layers, cont_embedding_layers):
     embed_tag = self.embedding_tag(tag)
     '''
 
+    embed_interaction_feature = answer_embedding_layer(interaction)
+
     embed_cate_features = torch.cat(
             [cate_embedding_layers[cate_col](cate_input) for cate_input, cate_col \
-                in zip(cate_inputs, args.cate_cols)], 2)
+                in zip(cate_inputs, args.cate_cols[1:])], 2)
 
     if len(args.cont_cols) != 0:
         embed_cont_features = torch.cat(
@@ -65,7 +71,7 @@ def forward_layers(args, input, cate_embedding_layers, cont_embedding_layers):
     embed = torch.cat([embed_cate_features,
                        embed_cont_features], 2)
 
-    return embed
+    return embed, embed_interaction_feature
 
 
 class LSTM(nn.Module):
@@ -156,8 +162,9 @@ class RNNATTN(nn.Module):
         self.embedding_question = nn.Embedding(self.args.n_questions + 1, self.hidden_dim//3)
         self.embedding_tag = nn.Embedding(self.args.n_tag + 1, self.hidden_dim//3)
         '''
-
-        self.cate_embedding_layers, self.cont_embedding_layers, self.comb_proj = init_layers(args)
+        
+        self.cate_embedding_layers, self.cont_embedding_layers, self.answer_embedding_layer, self.comb_proj, self.comb_proj_2 = \
+            init_layers(args)
 
         if self.args.model == "lstmattn":
             self.rnn = nn.LSTM(self.hidden_dim,
@@ -211,10 +218,12 @@ class RNNATTN(nn.Module):
         mask = input[-1]
 
         # Embedding
-        embed = forward_layers(self.args, input, self.cate_embedding_layers, self.cont_embedding_layers)
+        embed, embed_interaction_features = forward_layers(self.args, input, self.cate_embedding_layers, self.cont_embedding_layers, self.answer_embedding_layer)
 
         X = self.comb_proj(embed)
-
+        X = torch.cat([X, embed_interaction_features], 2)
+        X = self.comb_proj_2(torch.cat([X, embed_interaction_features], 2))
+        
         hidden = self.init_hidden(batch_size)
         out, hidden = self.rnn(X, hidden)
         out = out.contiguous().view(batch_size, -1, self.hidden_dim)
