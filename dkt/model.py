@@ -326,7 +326,7 @@ class LastQuery(nn.Module):
         self.value = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)
 
         self.attn = nn.MultiheadAttention(embed_dim=self.hidden_dim, num_heads=self.args.n_heads)
-        self.mask = None # last query에서는 필요가 없지만 수정을 고려하여서 넣어둠
+        self.mask = None
         self.ffn = Feed_Forward_block(self.hidden_dim)
 
         self.ln1 = nn.LayerNorm(self.hidden_dim)
@@ -363,6 +363,15 @@ class LastQuery(nn.Module):
 
         return (h, c)
 
+    def get_mask(self, seq_len, mask, batch_size):
+        new_mask = torch.zeros_like(mask)
+        new_mask[mask == 0] = 1
+        new_mask[mask != 0] = 0
+        mask = new_mask
+
+        # batchsize * n_head 수만큼 각 mask를 반복하여 증가시킨다
+        mask = mask.repeat(1, self.args.n_heads).view(batch_size*self.args.n_heads, -1, seq_len)
+        return mask.masked_fill(mask==1, float('-inf'))
 
     def forward(self, input):
         '''
@@ -371,6 +380,7 @@ class LastQuery(nn.Module):
         seq_len = interaction.size(1)
         '''
         batch_size = input[1].size(0)
+        seq_len = input[1].size(1)
         mask = input[-1]
 
         '''
@@ -401,7 +411,8 @@ class LastQuery(nn.Module):
 
         ## attention
         # last query only
-        out, _ = self.attn(q, k, v)
+        self.mask = self.get_mask(seq_len, mask, batch_size).to(self.device)
+        out, _ = self.attn(q, k, v, attn_mask=self.mask)
 
         ## residual + layer norm
         out = out.permute(1, 0, 2)
@@ -424,7 +435,5 @@ class LastQuery(nn.Module):
         out = self.fc(out)
 
         preds = self.activation(out).view(batch_size, -1)
-
-        # print(preds)
 
         return preds
