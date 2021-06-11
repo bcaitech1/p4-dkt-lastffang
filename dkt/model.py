@@ -222,7 +222,7 @@ class RNNATTN(nn.Module):
 
         X = self.comb_proj(embed)
         X = torch.cat([X, embed_interaction_features], 2)
-        X = self.comb_proj_2(torch.cat([X, embed_interaction_features], 2))
+        X = self.comb_proj_2(X)
         
         hidden = self.init_hidden(batch_size)
         out, hidden = self.rnn(X, hidden)
