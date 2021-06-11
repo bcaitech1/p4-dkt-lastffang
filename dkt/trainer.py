@@ -178,9 +178,11 @@ def train(train_loader, model, optimizer, args):
         if args.device == 'cuda':
             preds = preds.to('cpu').detach().numpy()
             targets = targets.to('cpu').detach().numpy()
+            loss = loss.to('cpu').detach().numpy()
         else: # cpu
             preds = preds.detach().numpy()
             targets = targets.detach().numpy()
+            loss = loss.detach().numpy()
 
         total_preds.append(preds)
         total_targets.append(targets)
@@ -222,9 +224,11 @@ def validate(valid_loader, model, args):
         if args.device == 'cuda':
             preds = preds.to('cpu').detach().numpy()
             targets = targets.to('cpu').detach().numpy()
+            loss = loss.to('cpu').detach().numpy()
         else:  # cpu
             preds = preds.detach().numpy()
             targets = targets.detach().numpy()
+            loss = loss.detach().numpy()
 
         total_preds.append(preds)
         total_targets.append(targets)
