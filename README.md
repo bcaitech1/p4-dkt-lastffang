@@ -41,6 +41,11 @@ code
 
 
 ## 코드 실행 방법
+* 데이터 생성
+
+1. `jupyter/pre-fe.ipynb` 를 수행해서 미리 계산해야 하는 feature 들을 포함한 데이터를 생성
+2. 생성된 파일 이름으로 `args` 의 `train_file_to_load`, `test_file_name` 를  설정
+
 * 모델 학습
 ```bash
 python train.py --prefix prefix --run_name run_name --model_dir models/model_dir
