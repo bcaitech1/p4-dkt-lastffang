@@ -86,7 +86,8 @@ def parse_args(mode):
 
     # cv
     parser.add_argument('--kfold_num', default=5, type=int, help='number of fold')
-    parser.add_argument('--do_CV', default='False', type=str2bool, help='whether do cross validation or not')
+    parser.add_argument('--cv_strategy', default=None, type=str, choices=choices["cv_options"], help='cross validation method')
+
 
     parser.add_argument('--log_steps', default=50, type=int, help='print log per n steps')
 

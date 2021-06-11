@@ -108,9 +108,14 @@ class Preprocess:
             timestamp = time.mktime(datetime.strptime(s, '%Y-%m-%d %H:%M:%S').timetuple())
             return int(timestamp)
 
-        df['Timestamp_int'] = df['Timestamp'].apply(convert_time)
-        df['elapsed_time'] = df.loc[:, ['userID', 'Timestamp_int', 'testId']].groupby(
-            ['userID', 'testId']).diff().shift(-1).fillna(int(10))
+        if 'elapsed' in df.columns:
+            df['elapsed_time'] = df['elapsed'].apply(lambda x: np.log(x))
+        else:
+            # TODO: Deal with zeros first before using log of elapsed_time
+            df['Timestamp_int'] = df['Timestamp'].apply(convert_time)
+            df['elapsed_time'] = df.loc[:, ['userID', 'Timestamp_int', 'testId']].groupby(
+                ['userID', 'testId']).diff().shift(-1).fillna(int(10))
+
         df.sort_values(by=['userID', 'Timestamp'], inplace=True)
         # 유저가 푼 시험지에 대해, 유저의 전체 정답/풀이횟수/정답률 계산 (3번 풀었으면 3배)
         df_group = df.groupby(['userID', 'testId'])['answerCode']
@@ -139,9 +144,14 @@ class Preprocess:
             timestamp = time.mktime(datetime.strptime(s, '%Y-%m-%d %H:%M:%S').timetuple())
             return int(timestamp)
 
-        df['Timestamp_int'] = df['Timestamp'].apply(convert_time)
-        df['elapsed_time'] = df.loc[:, ['userID', 'Timestamp_int', 'testId']].groupby(
-            ['userID', 'testId']).diff().shift(-1).fillna(int(10))
+        if 'elapsed' in df.columns:
+            df['elapsed_time'] = df['elapsed'].apply(lambda x: np.log(x))
+        else:
+            # TODO: Deal with zeros first before using log of elapsed_time
+            df['Timestamp_int'] = df['Timestamp'].apply(convert_time)
+            df['elapsed_time'] = df.loc[:, ['userID', 'Timestamp_int', 'testId']].groupby(
+                ['userID', 'testId']).diff().shift(-1).fillna(int(10))
+
         df.sort_values(by=['userID', 'Timestamp'], inplace=True)
         # 유저가 푼 시험지에 대해, 유저의 전체 정답/풀이횟수/정답률 계산 (3번 풀었으면 3배)
         df_group = df.groupby(['userID', 'testId'])['answerCode']
@@ -222,7 +232,7 @@ class Preprocess:
 
         # print(self.args.cate_len)
         # exit()
-        
+
         df = df.sort_values(by=['userID', 'Timestamp'], axis=0)
         columns = ['userID'] + self.args.cate_cols + self.args.cont_cols
 
