@@ -24,7 +24,7 @@ def parse_args(mode):
     parser.add_argument('--data_dir', default='/opt/ml/input/data/train_dataset', type=str, help='data directory')
     parser.add_argument('--asset_dir', default='asset/', type=str, help='data directory')
 
-    parser.add_argument('--train_file_to_load', default='train_data.csv', type=str, help='train file name to load')
+    parser.add_argument('--train_file_to_load', default='train_data_basic_stats.csv', type=str, help='train file name to load')
     parser.add_argument('--do_train_feature_engineering', default='True', type=str2bool, help='whether do feature engineering or not')
     parser.add_argument('--train_file_to_write', default='train_data_new1.csv', type=str, help='new train file name to write')
 
@@ -32,7 +32,7 @@ def parse_args(mode):
     parser.add_argument('--model_name', default='model.pt', type=str, help='model file name')
 
     parser.add_argument('--output_dir', default='output/', type=str, help='output directory')
-    parser.add_argument('--test_file_name', default='test_data.csv', type=str, help='test file name')
+    parser.add_argument('--test_file_name', default='test_data_basic_stats.csv', type=str, help='test file name')
 
     parser.add_argument('--max_seq_len', default=20, type=int, help='max sequence length')
     parser.add_argument('--num_workers', default=1, type=int, help='number of workers')

@@ -99,22 +99,6 @@ class Preprocess:
         '''
 
         df['answer_mean'] = df.groupby('userID')['answerCode'].transform('mean')  # 사용자별 정답률
-        df['assessment_category_mean'] = df.groupby('assessment_category')['answerCode'].transform('mean')  # 대분류의 정답률
-        df['knowledge_tag_mean'] = df.groupby('KnowledgeTag')['answerCode'].transform('mean')  # 지식 태그 분류별 정답률
-        df['testId_answer_rate'] = df.groupby('testId')['answerCode'].transform('mean')  # 시험지 별로 정답률
-        df['assessmentItemID_answer_rate'] = df.groupby('assessmentItemID')['answerCode'].transform('mean')  # 문항별 정답률
-
-        def convert_time(s):
-            timestamp = time.mktime(datetime.strptime(s, '%Y-%m-%d %H:%M:%S').timetuple())
-            return int(timestamp)
-
-        if 'elapsed' in df.columns:
-            df['elapsed_time'] = df['elapsed'].apply(lambda x: np.log(x))
-        else:
-            # TODO: Deal with zeros first before using log of elapsed_time
-            df['Timestamp_int'] = df['Timestamp'].apply(convert_time)
-            df['elapsed_time'] = df.loc[:, ['userID', 'Timestamp_int', 'testId']].groupby(
-                ['userID', 'testId']).diff().shift(-1).fillna(int(10))
 
         df.sort_values(by=['userID', 'Timestamp'], inplace=True)
         # 유저가 푼 시험지에 대해, 유저의 전체 정답/풀이횟수/정답률 계산 (3번 풀었으면 3배)
@@ -123,10 +107,6 @@ class Preprocess:
         df['user_total_ans_cnt'] = df_group.cumcount()
         df['user_total_acc'] = df['user_total_correct_cnt'] / df['user_total_ans_cnt']
         df['user_total_acc'] = df['user_total_acc'].fillna(float(0))
-        df['et_by_kt'] = df.groupby('KnowledgeTag')['elapsed_time'].transform(
-            lambda x: x.quantile(q=0.5))  # KT별 평균 소요 시간
-        df['et_by_as'] = df.groupby('assessmentItemID')['elapsed_time'].transform(
-            lambda x: x.quantile(q=0.5))  # 문항별 평균 소요 시간
 
         df['answer_mean_max'] = df.groupby(['userID'])['answer_mean'].agg('max')
         df['answer_mean_max'] = df['answer_mean_max'].fillna(float(1))
@@ -135,22 +115,6 @@ class Preprocess:
     # inference 시 사용하게 되는 확정된 features
     def __add_confirmed_continuous_features(self, df):
         df['answer_mean'] = df.groupby('userID')['answerCode'].transform('mean')  # 사용자별 정답률
-        df['assessment_category_mean'] = df.groupby('assessment_category')['answerCode'].transform('mean')  # 대분류의 정답률
-        df['knowledge_tag_mean'] = df.groupby('KnowledgeTag')['answerCode'].transform('mean')  # 지식 태그 분류별 정답률
-        df['testId_answer_rate'] = df.groupby('testId')['answerCode'].transform('mean')  # 시험지 별로 정답률
-        df['assessmentItemID_answer_rate'] = df.groupby('assessmentItemID')['answerCode'].transform('mean')  # 문항별 정답률
-
-        def convert_time(s):
-            timestamp = time.mktime(datetime.strptime(s, '%Y-%m-%d %H:%M:%S').timetuple())
-            return int(timestamp)
-
-        if 'elapsed' in df.columns:
-            df['elapsed_time'] = df['elapsed'].apply(lambda x: np.log(x))
-        else:
-            # TODO: Deal with zeros first before using log of elapsed_time
-            df['Timestamp_int'] = df['Timestamp'].apply(convert_time)
-            df['elapsed_time'] = df.loc[:, ['userID', 'Timestamp_int', 'testId']].groupby(
-                ['userID', 'testId']).diff().shift(-1).fillna(int(10))
 
         df.sort_values(by=['userID', 'Timestamp'], inplace=True)
         # 유저가 푼 시험지에 대해, 유저의 전체 정답/풀이횟수/정답률 계산 (3번 풀었으면 3배)
@@ -159,10 +123,6 @@ class Preprocess:
         df['user_total_ans_cnt'] = df_group.cumcount()
         df['user_total_acc'] = df['user_total_correct_cnt'] / df['user_total_ans_cnt']
         df['user_total_acc'] = df['user_total_acc'].fillna(float(0))
-        df['et_by_kt'] = df.groupby('KnowledgeTag')['elapsed_time'].transform(
-            lambda x: x.quantile(q=0.5))  # KT별 평균 소요 시간
-        df['et_by_as'] = df.groupby('assessmentItemID')['elapsed_time'].transform(
-            lambda x: x.quantile(q=0.5))  # 문항별 평균 소요 시간
 
         df['answer_mean_max'] = df.groupby(['userID'])['answer_mean'].agg('max')
         df['answer_mean_max'] = df['answer_mean_max'].fillna(float(1))
@@ -175,13 +135,11 @@ class Preprocess:
         마찬가지로, 최초 1회에만 사용 및 새로운 feature 추가 시에 __add_confirmed_category_features()에도 동일한 추가문을 넣어주어야함
         '''
         # 여기다가 추가 해보아요!
-        df['assessment_category'] = df.apply(lambda row: row.assessmentItemID[2], axis=1)
         #self.__add_confirmed_category_features(df)
         return df
 
     # inference 시 사용하게 되는 확정된 features
     def __add_confirmed_category_features(self, df):
-        df['assessment_category'] = df.apply(lambda row: row.assessmentItemID[2], axis=1)  # 대분류
         return df
 
     def load_data_from_file(self, file_name, is_train=True):
