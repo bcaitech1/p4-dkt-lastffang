@@ -14,6 +14,8 @@ DKT는 점점 디지털화 되가는 교육 환경에 중요한 기술로 떠오
 
 저희 프로젝트는 7,442명에 대한 문제 풀이와 2,266,586개의 문제 데이터를 이용해, 시험지의 마지막 대한 문항에 대해, **이 학생이 문제를 맞출지, 아닐지 예측하는 모델을 구축**하는 것입니다.
 
+<p align="center"><img src="https://s3.us-west-2.amazonaws.com/secure.notion-static.com/629369db-fb87-4cf7-9d9e-ce990c2d537a/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAT73L2G45O3KS52Y5%2F20210617%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20210617T115912Z&X-Amz-Expires=86400&X-Amz-Signature=b675367905c2667713d4517c540c17f2d93bee2b1f4cf36ea4bb1857c8c3e4fd&X-Amz-SignedHeaders=host&response-content-disposition=filename%20%3D%22Untitled.png%22"></p>
+
 ## 코드 구조
 ```bash
 code
