@@ -26,6 +26,7 @@ DKT는 점점 디지털화 되가는 교육 환경에 중요한 기술로 떠오
 
 ## 최종 모델 아키텍쳐 및 피쳐
 
+<p align="center"><img src="https://user-images.githubusercontent.com/28976984/122449394-c46c7c00-cfe0-11eb-98e8-09627ab5a836.png"></p> 
 
 ## 코드 구조
 ```bash
