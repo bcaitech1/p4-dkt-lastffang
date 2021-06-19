@@ -221,7 +221,7 @@ class Preprocess:
 
 
 class DKTDataset(torch.utils.data.Dataset):
-    def __init__(self, data, args,is_inference=False):
+    def __init__(self, data, args, is_inference=False):
         self.data = data
         self.args = args
         self.is_inference=is_inference
@@ -307,7 +307,7 @@ def collate(batch):
     return tuple(col_list)
 
 
-def get_loaders(args, train, valid,is_inference=False):
+def get_loaders(args, train, valid, is_inference=False):
     pin_memory = True
     train_loader, valid_loader = None, None
 
@@ -317,7 +317,7 @@ def get_loaders(args, train, valid,is_inference=False):
                                                    batch_size=args.batch_size, pin_memory=pin_memory,
                                                    collate_fn=collate)
     if valid is not None:
-        valset = DKTDataset(valid, args,is_inference)
+        valset = DKTDataset(valid, args, is_inference)
         valid_loader = torch.utils.data.DataLoader(valset, num_workers=args.num_workers, shuffle=False,
                                                    batch_size=args.batch_size, pin_memory=pin_memory,
                                                    collate_fn=collate)
