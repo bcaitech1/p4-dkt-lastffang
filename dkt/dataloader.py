@@ -1,13 +1,11 @@
 import os
 from datetime import datetime
 import time
-import tqdm
 import pandas as pd
 import random
 from sklearn.preprocessing import LabelEncoder
 import numpy as np
 import torch
-from torch.nn.utils.rnn import pad_sequence
 import random
 
 def random_subset( iterator, K ):
@@ -162,9 +160,9 @@ class Preprocess:
 
         # 사용하고자 하는 features를 아래에 작성하면 됨 #
         self.args.cont_cols.extend(
-            ['answer_mean', 'assessment_category_mean', 'knowledge_tag_mean', 'testId_answer_rate',
-             'assessmentItemID_answer_rate', 'elapsed_time', 'user_total_acc', 'et_by_kt', 'et_by_as','answer_mean_max'])
-        self.args.cate_cols.extend(['assessment_category'])
+            ['user_total_acc','assessment_category_mean','knowledge_tag_mean','testId_answer_rate',\
+                'assessmentItemID_answer_rate','elapsed_time','et_by_kt','et_by_as','time_lda','KnowledgeTagGroup_time_mean'])
+        self.args.cate_cols.extend(['assessment_category', 'elapsed_level'])
 
         df = self.__preprocessing(df, is_train)
 
@@ -172,7 +170,6 @@ class Preprocess:
         print(df[self.args.cate_cols].head())
         print(df[self.args.cont_cols].head())
 
-        # print(df.head())
         '''
         cate_len : 추후 category feature를 embedding할 시에 (model.py) embedding_layer의 input 크기를 결정할때 사용
         dictionary에 저장
@@ -187,9 +184,6 @@ class Preprocess:
 
         for cate_name in self.args.cate_cols:
             self.args.cate_len[cate_name] = len(np.load(os.path.join(self.args.asset_dir, f'{cate_name}_classes.npy')))
-
-        # print(self.args.cate_len)
-        # exit()
 
         df = df.sort_values(by=['userID', 'Timestamp'], axis=0)
         columns = ['userID'] + self.args.cate_cols + self.args.cont_cols

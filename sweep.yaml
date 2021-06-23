@@ -1,0 +1,64 @@
+method: bayes
+metric:
+  goal: maximize
+  name: auc_avg
+parameters:
+  batch_size:
+    distribution: int_uniform
+    max: 128
+    min: 32
+  clip_grad:
+    distribution: int_uniform
+    max: 100
+    min: 10
+  drop_out:
+    distribution: uniform
+    max: 1
+    min: 0.1
+  hidden_dim:
+    distribution: categorical
+    values:
+    - 32
+    - 64
+    - 128
+  max_seq_len:
+    distribution: int_uniform
+    max: 40
+    min: 5
+  model:
+    distribution: categorical
+    values:
+    - gruattn
+  n_heads:
+    distribution: categorical
+    values:
+    - 1
+    - 4
+    - 8
+    - 16
+  n_layers:
+    distribution: int_uniform
+    max: 8
+    min: 1
+  optimizer:
+    distribution: categorical
+    values:
+    - adam
+    - adamW
+  plateau_factor:
+    distribution: uniform
+    max: 1
+    min: 0.25
+  plateau_patience:
+    distribution: int_uniform
+    max: 20
+    min: 5
+  warmup_ratio:
+    distribution: uniform
+    max: 0.2
+    min: 0.05
+  weight_decay:
+    distribution: uniform
+    max: 0.05
+    min: 0.005
+program: train.py
